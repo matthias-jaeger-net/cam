@@ -4,6 +4,7 @@
 
 ## Live Demo
 
+This repository is set up to deploy the `main`branch directly to GitHub Pages.
 https://matthias-jaeger-net.github.io/cam/
 
 ---
@@ -41,5 +42,5 @@ https://matthias-jaeger-net.github.io/cam/
 ## Notes
 
 - Works best on **mobile browsers** that support the Media Capture API.
-- No frameworks required — pure HTML, CSS, and JavaScript.
+- p5*.*js framework is used for camera and rendering.
 - Minimal styling for easy customization.
