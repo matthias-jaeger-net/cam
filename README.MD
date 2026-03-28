@@ -10,11 +10,6 @@ https://matthias-jaeger-net.github.io/cam/
 
 ## Project Structure
 
-cam/
-├── index.html # Main HTML page
-├── script.js # JavaScript for camera logic & photo capture
-└── style.css # CSS styling for camera UI and overlays
-
 **Details:**
 
 - **index.html** – Contains the layout: camera container, shutter button, switch camera button, and photo overlay.
@@ -48,15 +43,3 @@ cam/
 - Works best on **mobile browsers** that support the Media Capture API.
 - No frameworks required — pure HTML, CSS, and JavaScript.
 - Minimal styling for easy customization.
-
----
-
-## Getting Started (Optional)
-
-To run locally:
-
-1. Clone the repository:
-
-```bash
-git clone https://github.com/yourusername/cam.git
-```
