@@ -1,157 +1,99 @@
+// Holds the current camera stream
 let cam;
+
+// Tracks which camera is active:
+// "environment" = back camera (phones)
+// "user" = front/selfie camera
 let facingMode = "environment";
 
-let asciiMode = true;
-let invertMode = false;
+// UI elements
+const flashEl = document.getElementById("flash"); // flash effect overlay
+const shutter = document.getElementById("shutter"); // capture button
+const switchBtn = document.getElementById("switch-camera"); // camera toggle button
 
-let flashEl = document.getElementById("flash");
-const shutter = document.getElementById("shutter");
-const switchBtn = document.getElementById("switch-camera");
-
-const asciiToggle = document.getElementById("ascii-toggle");
-const invertToggle = document.getElementById("invert-toggle");
-
+// Photo preview overlay elements
 const overlay = document.getElementById("photo-overlay");
 const overlayImage = document.getElementById("overlay-image");
 const overlayDownload = document.getElementById("overlay-download");
 const overlayClose = document.getElementById("overlay-close");
 
-// Init toggles
-asciiToggle.checked = true;
-invertToggle.checked = false;
+// Main container for the canvas
+const container = document.getElementById("camera-container");
 
-const settingsOverlay = document.getElementById("settings-overlay");
-const openSettings = document.getElementById("open-settings");
-const closeSettings = document.getElementById("close-settings");
+// -----------------------------
+// UI INTERACTIONS
+// -----------------------------
 
-// open
-openSettings.addEventListener("click", () => {
-    settingsOverlay.classList.add("active");
-});
-
-// close
-closeSettings.addEventListener("click", () => {
-    settingsOverlay.classList.remove("active");
-});
-
-asciiToggle.addEventListener("change", () => {
-    asciiMode = asciiToggle.checked;
-});
-
-invertToggle.addEventListener("change", () => {
-    invertMode = invertToggle.checked;
-});
-
-// Close overlay
+// Close the preview overlay when user clicks "close"
 overlayClose.addEventListener("click", () => {
     overlay.classList.remove("active");
 });
 
-// Camera container
-const container = document.getElementById("camera-container");
+// -----------------------------
+// LAYOUT HELPERS
+// -----------------------------
 
-// Position shutter
+// Positions the shutter button near the bottom of the screen
 function positionShutter() {
     const margin = 40;
     const y = window.innerHeight - shutter.offsetHeight - margin;
     shutter.style.top = `${y}px`;
 }
 
-// Init camera
+// -----------------------------
+// CAMERA SETUP
+// -----------------------------
+
 function initCamera() {
+    // Remove previous camera stream if it exists
     if (cam) cam.remove();
 
+    // Create a new video capture stream
     cam = createCapture({
-        video: { facingMode: facingMode },
-        audio: false,
+        video: { facingMode: facingMode }, // choose front/back camera
+        audio: false, // no audio needed
     });
 
+    // Prevent feedback issues (mainly mobile)
     cam.elt.muted = true;
+
+    // Hide the raw video element (we render it on canvas instead)
     cam.hide();
 }
 
-// Setup
+// -----------------------------
+// P5.JS SETUP (runs once)
+// -----------------------------
+
 function setup() {
+    // Create a full-screen canvas
     const canvas = createCanvas(windowWidth, windowHeight);
+
+    // Attach canvas to container div
     canvas.parent("camera-container");
 
+    // Start camera
     initCamera();
+
+    // Position UI
     positionShutter();
 }
 
-// ASCII render
-function image2Ascii(video, x, y, w, h, fgColor) {
-    video.loadPixels();
+// -----------------------------
+// MAIN DRAW LOOP (runs every frame)
+// -----------------------------
 
-    const chars = "@%#*+=-:. ";
-    const charLen = chars.length;
-
-    const cellH = 16;
-    const cellW = cellH * 0.6;
-
-    const cols = Math.ceil(w / cellW);
-    const rows = Math.ceil(h / cellH);
-
-    const videoCellW = video.width / cols;
-    const videoCellH = video.height / rows;
-
-    let ascii = "";
-
-    for (let row = 0; row < rows; row++) {
-        for (let col = 0; col < cols; col++) {
-            const i = Math.floor(col * videoCellW + videoCellW * 0.5);
-            const j = Math.floor(row * videoCellH + videoCellH * 0.5);
-
-            const index = (j * video.width + i) * 4;
-
-            const r = video.pixels[index];
-            const g = video.pixels[index + 1];
-            const b = video.pixels[index + 2];
-
-            // better luminance
-            const avg = 0.299 * r + 0.587 * g + 0.114 * b;
-
-            let charIndex;
-
-            if (invertMode) {
-                charIndex = Math.floor(map(avg, 0, 255, 0, charLen - 1));
-            } else {
-                charIndex = Math.floor(map(avg, 0, 255, charLen - 1, 0));
-            }
-
-            ascii += chars[charIndex];
-        }
-        ascii += "\n";
-    }
-
-    fill(fgColor);
-    textFont("monospace");
-    textSize(cellH);
-    textLeading(cellH);
-
-    text(ascii, x, y);
-}
-
-// Draw loop
 function draw() {
-    const style = getComputedStyle(container);
+    // Clear background (black)
+    background(0);
 
-    let bg = style.backgroundColor || "black";
-    let fg = style.color || "white";
-
-    // invert colors
-    if (invertMode) {
-        const temp = bg;
-        bg = fg;
-        fg = temp;
-    }
-
-    background(bg);
-
+    // Maintain aspect ratio of video
     let canvasRatio = width / height;
     let videoRatio = cam.width / cam.height;
+
     let drawWidth, drawHeight;
 
+    // Scale video to fill screen while preserving proportions
     if (canvasRatio > videoRatio) {
         drawWidth = width;
         drawHeight = width / videoRatio;
@@ -162,74 +104,85 @@ function draw() {
 
     push();
 
-    // mirror front camera
+    // Mirror image when using front camera (like a selfie view)
     if (facingMode === "user") {
         translate(width, 0);
         scale(-1, 1);
     }
 
-    if (asciiMode) {
-        image2Ascii(
-            cam,
-            width / 2 - drawWidth / 2,
-            height / 2 - drawHeight / 2,
-            drawWidth,
-            drawHeight,
-            fg,
-        );
-    } else {
-        image(
-            cam,
-            width / 2 - drawWidth / 2,
-            height / 2 - drawHeight / 2,
-            drawWidth,
-            drawHeight,
-        );
-    }
+    // Draw the camera feed to the canvas
+    image(
+        cam,
+        width / 2 - drawWidth / 2,
+        height / 2 - drawHeight / 2,
+        drawWidth,
+        drawHeight,
+    );
 
     pop();
 }
 
-// Resize
+// -----------------------------
+// HANDLE WINDOW RESIZE
+// -----------------------------
+
 function windowResized() {
     resizeCanvas(windowWidth, windowHeight);
     positionShutter();
 }
 
-// Take photo
+// -----------------------------
+// PHOTO CAPTURE
+// -----------------------------
+
+// Trigger photo when shutter button is clicked
 shutter.addEventListener("click", takePhoto);
 
 async function takePhoto() {
+    // Simulate camera flash
     flashEl.style.opacity = 1;
     setTimeout(() => (flashEl.style.opacity = 0), 100);
 
+    // Capture current canvas frame
     let img = get();
+
+    // Convert to image data URL (PNG)
     let dataUrl = img.canvas.toDataURL("image/png");
 
+    // Show preview overlay
     overlayImage.src = dataUrl;
     overlay.classList.add("active");
 
+    // Convert data URL to file (for sharing)
     const res = await fetch(dataUrl);
     const blob = await res.blob();
-    const file = new File([blob], "ascii-camera.png", { type: "image/png" });
+    const file = new File([blob], "camera-photo.png", { type: "image/png" });
 
+    // Try native sharing (mobile devices)
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
             await navigator.share({
                 files: [file],
-                title: "ASCII Camera Photo",
+                title: "Camera Photo",
             });
         } catch {
             console.log("Share cancelled");
         }
     } else {
+        // Fallback: enable download link
         overlayDownload.href = dataUrl;
-        overlayDownload.download = "ascii-camera.png";
+        overlayDownload.download = "camera-photo.png";
     }
 }
 
-// Switch camera
+// -----------------------------
+// SWITCH CAMERA (front/back)
+// -----------------------------
+
 switchBtn.addEventListener("click", () => {
+    // Toggle between front and back camera
     facingMode = facingMode === "environment" ? "user" : "environment";
+
+    // Reinitialize camera with new mode
     initCamera();
 });
