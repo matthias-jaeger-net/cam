@@ -39,7 +39,7 @@ canvas {
 
     padding: 20px;
     padding-bottom: calc(
-        20px + env(safe-area-inset-bottom)
+        32px + env(safe-area-inset-bottom)
     ); /* iPhone safe area */
 
     z-index: 10;
@@ -62,10 +62,16 @@ canvas {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
 
-    color: white;
+    color: #0af;
     font-size: 22px;
 
     cursor: pointer;
+}
+
+img {
+    width: 24px;
+    height: 24px;
+    fill: #0af;
 }
 
 /* 📸 Shutter (center emphasis) */
