@@ -32,6 +32,4 @@ https://matthias-jaeger-net.github.io/cam/
 
 ## Notes
 
-- Works best on **mobile browsers** that support the Media Capture API.
-- p5*.*js framework is used for camera and rendering.
-- Minimal styling for easy customization.
+https://lucide.dev/icons/
