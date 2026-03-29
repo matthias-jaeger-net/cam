@@ -125,8 +125,8 @@ img {
 
 /* Image preview */
 #overlay-image {
-    width: 90%;
-    max-width: 500px;
+    width: 80%;
+    height: auto;
 
     border-radius: 12px;
     border: 1px solid #0af;
