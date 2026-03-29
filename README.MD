@@ -2,20 +2,11 @@
 
 > A simple web app to capture photos from your camera in the browser.
 
+> This repository is set up to deploy the `main`branch directly to GitHub Pages.
+
 ## Live Demo
 
-This repository is set up to deploy the `main`branch directly to GitHub Pages.
 https://matthias-jaeger-net.github.io/cam/
-
----
-
-## Project Structure
-
-**Details:**
-
-- **index.html** – Contains the layout: camera container, shutter button, switch camera button, and photo overlay.
-- **script.js** – Handles camera initialization, switching front/back cameras, taking photos, showing flash effect, and sharing/downloading images.
-- **style.css** – Provides styling for the camera view, buttons, overlays, and simple transitions.
 
 ## Features
 
