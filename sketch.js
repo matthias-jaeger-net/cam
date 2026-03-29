@@ -1,188 +1,103 @@
-// Holds the current camera stream
 let cam;
-
-// Tracks which camera is active:
-// "environment" = back camera (phones)
-// "user" = front/selfie camera
 let facingMode = "environment";
 
-// UI elements
-const flashEl = document.getElementById("flash"); // flash effect overlay
-const shutter = document.getElementById("shutter"); // capture button
-const switchBtn = document.getElementById("switch-camera"); // camera toggle button
+const flashEl = document.getElementById("flash");
+const shutter = document.getElementById("shutter");
+const switchBtn = document.getElementById("switch-camera");
 
-// Photo preview overlay elements
 const overlay = document.getElementById("photo-overlay");
 const overlayImage = document.getElementById("overlay-image");
-const overlayDownload = document.getElementById("overlay-download");
-const overlayClose = document.getElementById("overlay-close");
+const download = document.getElementById("download");
+const closeBtn = document.getElementById("close");
 
-// Main container for the canvas
-const container = document.getElementById("camera-container");
-
-// -----------------------------
-// UI INTERACTIONS
-// -----------------------------
-
-// Close the preview overlay when user clicks "close"
-overlayClose.addEventListener("click", () => {
-    overlay.classList.remove("active");
-});
-
-// -----------------------------
-// LAYOUT HELPERS
-// -----------------------------
-
-// Positions the shutter button near the bottom of the screen
-function positionShutter() {
-    const margin = 40;
-    const y = window.innerHeight - shutter.offsetHeight - margin;
-    shutter.style.top = `${y}px`;
-}
-
-// -----------------------------
-// CAMERA SETUP
-// -----------------------------
+closeBtn.onclick = () => overlay.classList.remove("active");
 
 function initCamera() {
-    // Remove previous camera stream if it exists
     if (cam) cam.remove();
 
-    // Create a new video capture stream
     cam = createCapture({
-        video: { facingMode: facingMode }, // choose front/back camera
-        audio: false, // no audio needed
+        video: { facingMode },
+        audio: false,
     });
 
-    // Prevent feedback issues (mainly mobile)
+    cam.elt.setAttribute("playsinline", true); // iOS fix
     cam.elt.muted = true;
-
-    // Hide the raw video element (we render it on canvas instead)
     cam.hide();
 }
 
-// -----------------------------
-// P5.JS SETUP (runs once)
-// -----------------------------
-
 function setup() {
-    // Create a full-screen canvas
-    const canvas = createCanvas(windowWidth, windowHeight);
-
-    // Attach canvas to container div
-    canvas.parent("camera-container");
-
-    // Start camera
+    const c = createCanvas(window.innerWidth, window.innerHeight);
+    c.parent("camera-container");
     initCamera();
-
-    // Position UI
-    positionShutter();
 }
 
-// -----------------------------
-// MAIN DRAW LOOP (runs every frame)
-// -----------------------------
-
 function draw() {
-    // Clear background (black)
+    if (!cam || cam.width === 0) return;
+
     background(0);
 
-    // Maintain aspect ratio of video
     let canvasRatio = width / height;
     let videoRatio = cam.width / cam.height;
 
-    let drawWidth, drawHeight;
+    let w, h;
 
-    // Scale video to fill screen while preserving proportions
     if (canvasRatio > videoRatio) {
-        drawWidth = width;
-        drawHeight = width / videoRatio;
+        w = width;
+        h = width / videoRatio;
     } else {
-        drawHeight = height;
-        drawWidth = height * videoRatio;
+        h = height;
+        w = height * videoRatio;
     }
 
     push();
 
-    // Mirror image when using front camera (like a selfie view)
     if (facingMode === "user") {
         translate(width, 0);
         scale(-1, 1);
     }
 
-    // Draw the camera feed to the canvas
-    image(
-        cam,
-        width / 2 - drawWidth / 2,
-        height / 2 - drawHeight / 2,
-        drawWidth,
-        drawHeight,
-    );
-
+    image(cam, width / 2 - w / 2, height / 2 - h / 2, w, h);
     pop();
-}
 
-// -----------------------------
-// HANDLE WINDOW RESIZE
-// -----------------------------
+    // Rule of thirds guide lines
+    stroke(255, 50);
+    strokeWeight(1);
+    line(width / 3, 0, width / 3, height);
+    line((2 * width) / 3, 0, (2 * width) / 3, height);
+    line(0, height / 3, width, height / 3);
+    line(0, (2 * height) / 3, width, (2 * height) / 3);
+}
 
 function windowResized() {
-    resizeCanvas(windowWidth, windowHeight);
-    positionShutter();
+    resizeCanvas(window.innerWidth, window.innerHeight);
 }
 
-// -----------------------------
-// PHOTO CAPTURE
-// -----------------------------
-
-// Trigger photo when shutter button is clicked
-shutter.addEventListener("click", takePhoto);
-
-async function takePhoto() {
-    // Simulate camera flash
+shutter.onclick = async () => {
     flashEl.style.opacity = 1;
     setTimeout(() => (flashEl.style.opacity = 0), 100);
 
-    // Capture current canvas frame
     let img = get();
-
-    // Convert to image data URL (PNG)
     let dataUrl = img.canvas.toDataURL("image/png");
 
-    // Show preview overlay
     overlayImage.src = dataUrl;
     overlay.classList.add("active");
 
-    // Convert data URL to file (for sharing)
     const res = await fetch(dataUrl);
     const blob = await res.blob();
-    const file = new File([blob], "camera-photo.png", { type: "image/png" });
+    const file = new File([blob], "photo.png", {
+        type: "image/png",
+    });
 
-    // Try native sharing (mobile devices)
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
-            await navigator.share({
-                files: [file],
-                title: "Camera Photo",
-            });
-        } catch {
-            console.log("Share cancelled");
-        }
+            await navigator.share({ files: [file] });
+        } catch {}
     } else {
-        // Fallback: enable download link
-        overlayDownload.href = dataUrl;
-        overlayDownload.download = "camera-photo.png";
+        download.href = dataUrl;
     }
-}
+};
 
-// -----------------------------
-// SWITCH CAMERA (front/back)
-// -----------------------------
-
-switchBtn.addEventListener("click", () => {
-    // Toggle between front and back camera
+switchBtn.onclick = () => {
     facingMode = facingMode === "environment" ? "user" : "environment";
-
-    // Reinitialize camera with new mode
     initCamera();
-});
+};
