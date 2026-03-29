@@ -15,7 +15,8 @@ body {
 #camera-container {
     position: relative;
     width: 100vw;
-    height: 100vh;
+    height: 100vh; /* fallback */
+    height: 100dvh; /* modern fix */
 }
 
 /* Canvas fills screen */
