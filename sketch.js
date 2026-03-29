@@ -92,9 +92,9 @@ shutter.onclick = async () => {
         try {
             await navigator.share({ files: [file] });
         } catch {}
-    } else {
-        download.href = dataUrl;
     }
+
+    download.href = dataUrl;
 };
 
 switchBtn.onclick = () => {
