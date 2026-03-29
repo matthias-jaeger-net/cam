@@ -18,51 +18,72 @@ body {
     height: 100vh;
 }
 
+/* Canvas fills screen */
 canvas {
     position: absolute;
     width: 100%;
     height: 100%;
+    object-fit: cover;
 }
 
-/* Bottom bar */
+/* 🔻 Bottom bar */
 .bottom-bar {
     position: absolute;
     bottom: 0;
     left: 0;
     width: 100%;
-    padding: 32px;
+
     display: flex;
     justify-content: space-between;
     align-items: center;
+
+    padding: 20px;
+    padding-bottom: calc(
+        20px + env(safe-area-inset-bottom)
+    ); /* iPhone safe area */
+
     z-index: 10;
+
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.6), transparent);
 }
 
-button,
-a {
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 50%;
+/* Buttons (base) */
+.bottom-bar button {
     width: 60px;
     height: 60px;
+
+    border-radius: 50%;
+    border: none;
+
     display: flex;
     align-items: center;
     justify-content: center;
+
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+
     color: white;
+    font-size: 22px;
+
+    cursor: pointer;
 }
 
-/* Bigger shutter */
+/* 📸 Shutter (center emphasis) */
 #shutter {
     width: 80px;
     height: 80px;
+
     border: 4px solid #0af;
     background: rgba(0, 170, 255, 0.3);
 }
 
+/* Press feedback */
 #shutter:active {
-    transform: scale(0.95);
+    transform: scale(0.92);
     background: #0af;
 }
 
+/* Flash effect */
 #flash {
     position: absolute;
     inset: 0;
@@ -77,13 +98,16 @@ a {
     position: fixed;
     inset: 0;
     background: black;
+
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s;
+
     z-index: 999;
 }
 
@@ -92,17 +116,29 @@ a {
     pointer-events: auto;
 }
 
+/* Image preview */
 #overlay-image {
     width: 90%;
     max-width: 500px;
+
     border-radius: 12px;
     border: 1px solid #0af;
 }
 
+/* Overlay controls */
 .overlay-controls {
     width: 100%;
     max-width: 500px;
+
     display: flex;
     justify-content: space-between;
     padding: 20px;
+}
+
+/* Buttons / links */
+a,
+button {
+    color: #0af;
+    background: none;
+    border: none;
 }
