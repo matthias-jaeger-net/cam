@@ -53,6 +53,7 @@ fibControls.innerHTML = `
     <button id="fib-spin">↻</button>
     <button id="fib-new">new</button>
     <button id="fib-delete">del</button>
+    <button id="fib-fit">fit</button>
 `;
 document.body.appendChild(fibControls);
 
@@ -167,6 +168,25 @@ fibControls.querySelector("#fib-spin").onclick = (e) => {
         sp.setup.anchorY = sq1y + nd.dy * sp.size / 2;
         sp.squares = buildFibSquares(sp);
     }
+};
+
+fibControls.querySelector("#fib-fit").onclick = (e) => {
+    e.stopPropagation(); fibButtonClicked = true;
+    const sp = spirals[activeIdx];
+    if (!sp.setup || sp.squares.length < 2) return;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const sq of sp.squares) {
+        const s = sq.size / 2;
+        minX = Math.min(minX, sq.x - s); minY = Math.min(minY, sq.y - s);
+        maxX = Math.max(maxX, sq.x + s); maxY = Math.max(maxY, sq.y + s);
+    }
+    const scale = Math.min(window.innerWidth / (maxX - minX), window.innerHeight / (maxY - minY));
+    const bboxCX = (minX + maxX) / 2;
+    const bboxCY = (minY + maxY) / 2;
+    sp.setup.anchorX = window.innerWidth  / 2 + (sp.setup.anchorX - bboxCX) * scale;
+    sp.setup.anchorY = window.innerHeight / 2 + (sp.setup.anchorY - bboxCY) * scale;
+    sp.size = sp.size * scale;
+    sp.squares = buildFibSquares(sp);
 };
 
 fibBtn.onclick = () => {
