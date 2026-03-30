@@ -4,13 +4,70 @@ let facingMode = "environment";
 const flashEl = document.getElementById("flash");
 const shutter = document.getElementById("shutter");
 const switchBtn = document.getElementById("switch-camera");
+const gyroToggle = document.getElementById("gyro-toggle");
+const permissionBtn = document.getElementById("gyro-permission");
 
 const overlay = document.getElementById("photo-overlay");
 const overlayImage = document.getElementById("overlay-image");
 const download = document.getElementById("download");
 const closeBtn = document.getElementById("close");
 
+// Gyroscope variables
+let gyroEnabled = false;
+let gyroAlpha = 0; // rotation around Z axis
+let gyroBeta = 0; // rotation around X axis (forward/backward tilt)
+let gyroGamma = 0; // rotation around Y axis (left/right tilt)
+let hasGyro = false;
+
 closeBtn.onclick = () => overlay.classList.remove("active");
+
+// Gyroscope permission request (iOS 13+)
+if (permissionBtn) {
+    permissionBtn.onclick = async () => {
+        if (
+            typeof DeviceOrientationEvent !== "undefined" &&
+            typeof DeviceOrientationEvent.requestPermission === "function"
+        ) {
+            try {
+                const permission =
+                    await DeviceOrientationEvent.requestPermission();
+                if (permission === "granted") {
+                    hasGyro = true;
+                    permissionBtn.style.opacity = "0.5";
+                    permissionBtn.disabled = true;
+                }
+            } catch (error) {
+                console.error("Permission denied:", error);
+            }
+        } else {
+            // Non-iOS or older devices
+            hasGyro = true;
+            permissionBtn.style.opacity = "0.5";
+            permissionBtn.disabled = true;
+        }
+    };
+}
+
+// Gyroscope toggle
+if (gyroToggle) {
+    gyroToggle.onclick = () => {
+        if (!hasGyro) {
+            alert("Please request gyroscope permission first");
+            return;
+        }
+        gyroEnabled = !gyroEnabled;
+        gyroToggle.classList.toggle("active", gyroEnabled);
+    };
+}
+
+// Listen for device orientation
+window.addEventListener("deviceorientation", (event) => {
+    if (hasGyro) {
+        gyroAlpha = event.alpha || 0; // 0 to 360
+        gyroBeta = event.beta || 0; // -180 to 180
+        gyroGamma = event.gamma || 0; // -90 to 90
+    }
+});
 
 function initCamera() {
     if (cam) cam.remove();
@@ -51,6 +108,17 @@ function draw() {
 
     push();
 
+    // Apply gyroscope tilt effect if enabled
+    if (gyroEnabled && hasGyro) {
+        translate(width / 2, height / 2);
+        // Map gyro values to rotation (limit rotation for usability)
+        let tiltX = map(gyroBeta, -90, 90, -15, 15, true);
+        let tiltY = map(gyroGamma, -90, 90, -15, 15, true);
+        rotateX(radians(tiltX * 0.3));
+        rotateY(radians(tiltY * 0.3));
+        translate(-width / 2, -height / 2);
+    }
+
     if (facingMode === "user") {
         translate(width, 0);
         scale(-1, 1);
@@ -66,6 +134,45 @@ function draw() {
     line((2 * width) / 3, 0, (2 * width) / 3, height);
     line(0, height / 3, width, height / 3);
     line(0, (2 * height) / 3, width, (2 * height) / 3);
+
+    // Draw gyroscope level indicator
+    if (gyroEnabled && hasGyro) {
+        drawLevelIndicator();
+    }
+}
+
+function drawLevelIndicator() {
+    // Horizontal level indicator (shows if device is level left-right)
+    push();
+    stroke(0, 255, 100);
+    strokeWeight(2);
+    noFill();
+
+    let indicatorY = 80;
+    let indicatorWidth = 120;
+    let indicatorX = width / 2 - indicatorWidth / 2;
+
+    // Background box
+    fill(0, 0, 0, 100);
+    rect(indicatorX - 20, indicatorY - 20, indicatorWidth + 40, 40, 5);
+
+    // Level line
+    stroke(0, 255, 100);
+    line(indicatorX, indicatorY, indicatorX + indicatorWidth, indicatorY);
+
+    // Bubble position based on gamma (left-right tilt)
+    let bubblePos = map(
+        gyroGamma,
+        -30,
+        30,
+        indicatorX,
+        indicatorX + indicatorWidth,
+        true,
+    );
+    fill(0, 255, 100);
+    circle(bubblePos, indicatorY, 12);
+
+    pop();
 }
 
 function windowResized() {
