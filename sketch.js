@@ -8,16 +8,6 @@ let dragSpiralIdx = -1;
 let dragOffsetX = 0;
 let dragOffsetY = 0;
 
-const fibOverlay = document.getElementById("fib-overlay");
-const fibCtx = fibOverlay.getContext("2d");
-
-function resizeFibOverlay() {
-    fibOverlay.width = window.innerWidth;
-    fibOverlay.height = window.innerHeight;
-}
-resizeFibOverlay();
-window.addEventListener("resize", resizeFibOverlay);
-
 let spirals = []; // [{ squares, setup, size, label }]
 let activeIdx = -1;
 let nextLabelCode = 65; // 65 = 'A'
@@ -54,6 +44,7 @@ fibMessage.style.cssText = "position:fixed;top:20px;left:50%;transform:translate
 document.body.appendChild(fibMessage);
 
 const fibControls = document.createElement("div");
+fibControls.id = "fib-controls-bar";
 fibControls.style.cssText = "position:fixed;bottom:40px;left:50%;transform:translateX(-50%);display:none;gap:20px;z-index:1000;align-items:center;";
 fibControls.innerHTML = `
     <button id="fib-minus">−</button>
@@ -114,6 +105,7 @@ function buildFibSquares(sp) {
 }
 
 const fibList = document.createElement("div");
+fibList.id = "fib-list-bar";
 fibList.style.cssText = "position:fixed;top:calc(16px + env(safe-area-inset-top));left:16px;display:none;flex-direction:column;gap:10px;z-index:1000;";
 document.body.appendChild(fibList);
 
@@ -236,40 +228,24 @@ function draw() {
     image(cam, width / 2 - w / 2, height / 2 - h / 2, w, h);
     pop();
 
-    // Fibonacci squares on overlay canvas
-    fibCtx.clearRect(0, 0, fibOverlay.width, fibOverlay.height);
+    // Fibonacci squares
     if (fibMode) {
-        fibCtx.lineWidth = 2;
-        fibCtx.globalCompositeOperation = "source-over";
+        noFill();
+        strokeWeight(2);
+        rectMode(CENTER);
         for (let i = 0; i < spirals.length; i++) {
             const sp = spirals[i];
             const isActive = i === activeIdx;
-            fibCtx.strokeStyle = isActive ? "rgba(0,170,255,1)" : "rgba(0,170,255,0.4)";
+            stroke(0, 170, 255, isActive ? 255 : 100);
             if (sp.squares.length === 0 && isActive) {
-                const s = sp.size;
-                fibCtx.strokeRect(width / 2 - s / 2, height / 2 - s / 2, s, s);
+                rect(width / 2, height / 2, sp.size, sp.size);
             } else {
                 for (const sq of sp.squares) {
-                    const s = sq.size || sp.size;
-                    fibCtx.strokeRect(sq.x - s / 2, sq.y - s / 2, s, s);
+                    rect(sq.x, sq.y, sq.size || sp.size, sq.size || sp.size);
                 }
             }
         }
-        // Punch out button areas so lines are hidden behind buttons
-        fibCtx.globalCompositeOperation = "destination-out";
-        fibCtx.fillStyle = "rgba(0,0,0,1)";
-        const pad = 6;
-        const btns = [
-            fibShutter,
-            ...Array.from(fibControls.querySelectorAll("button")),
-            ...Array.from(fibList.querySelectorAll("button")),
-        ];
-        for (const btn of btns) {
-            if (window.getComputedStyle(btn).display === "none") continue;
-            const r = btn.getBoundingClientRect();
-            fibCtx.fillRect(r.left - pad, r.top - pad, r.width + pad * 2, r.height + pad * 2);
-        }
-        fibCtx.globalCompositeOperation = "source-over";
+        rectMode(CORNER);
     }
 
     // Rule of thirds guide lines

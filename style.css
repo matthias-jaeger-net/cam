@@ -101,12 +101,13 @@ img {
     background: rgba(0, 170, 255, 0.3);
 }
 
-/* Fibonacci overlay canvas */
-#fib-overlay {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 999;
+/* Fib control and list buttons */
+#fib-controls-bar button,
+#fib-list-bar button {
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(10px);
+    border-radius: 6px;
+    padding: 6px 12px;
 }
 
 /* Fib shutter */
