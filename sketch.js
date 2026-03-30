@@ -5,7 +5,6 @@ const flashEl = document.getElementById("flash");
 const shutter = document.getElementById("shutter");
 const switchBtn = document.getElementById("switch-camera");
 const gyroToggle = document.getElementById("gyro-toggle");
-const permissionBtn = document.getElementById("gyro-permission");
 
 const overlay = document.getElementById("photo-overlay");
 const overlayImage = document.getElementById("overlay-image");
@@ -29,41 +28,28 @@ function checkGyroSupport() {
     );
 }
 
-// Gyroscope permission request (iOS 13+)
-if (permissionBtn) {
-    permissionBtn.onclick = async () => {
-        if (checkGyroSupport()) {
-            try {
-                const permission =
-                    await DeviceOrientationEvent.requestPermission();
-                if (permission === "granted") {
-                    hasGyro = true;
-                    permissionBtn.innerHTML = "✓ 📍";
-                    console.log("Gyroscope permission granted");
-                } else {
-                    console.warn("Gyroscope permission denied");
-                    alert("Gyroscope access denied");
-                }
-            } catch (error) {
-                console.error("Permission error:", error);
-                alert("Error requesting permission");
+// Auto-request gyroscope permission on app load
+async function requestGyroPermission() {
+    if (checkGyroSupport()) {
+        try {
+            const permission = await DeviceOrientationEvent.requestPermission();
+            if (permission === "granted") {
+                hasGyro = true;
+                console.log("Gyroscope permission granted automatically");
             }
-        } else {
-            // Non-iOS or older devices - assume support
-            hasGyro = true;
-            permissionBtn.innerHTML = "✓ 📍";
-            console.log("Gyroscope assumed available");
+        } catch (error) {
+            console.log("Gyroscope permission not available");
         }
-    };
+    } else {
+        // Non-iOS or older devices - assume support
+        hasGyro = true;
+        console.log("Gyroscope assumed available");
+    }
 }
 
 // Gyroscope toggle
 if (gyroToggle) {
     gyroToggle.onclick = () => {
-        if (!hasGyro) {
-            alert("Please request gyroscope permission first");
-            return;
-        }
         gyroEnabled = !gyroEnabled;
         gyroToggle.classList.toggle("active", gyroEnabled);
         console.log("Gyroscope toggled:", gyroEnabled);
@@ -103,6 +89,7 @@ function setup() {
     const c = createCanvas(window.innerWidth, window.innerHeight);
     c.parent("camera-container");
     initCamera();
+    requestGyroPermission(); // Auto-request gyro permission
 }
 
 function draw() {
@@ -170,35 +157,26 @@ function draw() {
 }
 
 function drawLevelIndicator() {
-    // Horizontal level indicator (shows if device is level left-right)
+    // Simple rotating line indicator
     push();
+
+    let centerX = width / 2;
+    let centerY = height / 2;
+    let lineLength = 100;
+
+    // Rotate based on beta (forward/backward tilt)
+    translate(centerX, centerY);
+    rotate(radians(gyroBeta));
+
+    // Draw horizontal line
     stroke(0, 255, 100);
-    strokeWeight(2);
-    noFill();
+    strokeWeight(3);
+    line(-lineLength, 0, lineLength, 0);
 
-    let indicatorY = 80;
-    let indicatorWidth = 120;
-    let indicatorX = width / 2 - indicatorWidth / 2;
-
-    // Background box
-    fill(0, 0, 0, 100);
-    rect(indicatorX - 20, indicatorY - 20, indicatorWidth + 40, 40, 5);
-
-    // Level line
-    stroke(0, 255, 100);
-    line(indicatorX, indicatorY, indicatorX + indicatorWidth, indicatorY);
-
-    // Bubble position based on gamma (left-right tilt)
-    let bubblePos = map(
-        gyroGamma,
-        -30,
-        30,
-        indicatorX,
-        indicatorX + indicatorWidth,
-        true,
-    );
+    // Draw center point
     fill(0, 255, 100);
-    circle(bubblePos, indicatorY, 12);
+    noStroke();
+    circle(0, 0, 8);
 
     pop();
 }
