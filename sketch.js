@@ -51,6 +51,7 @@ fibControls.innerHTML = `
     <button id="fib-plus">+</button>
     <span style="display:inline-block;width:20px;"></span>
     <button id="fib-spin">↻</button>
+    <button id="fib-mirror">mirror</button>
     <button id="fib-new">new</button>
     <button id="fib-delete">del</button>
     <button id="fib-fit">fit</button>
@@ -127,7 +128,7 @@ fibControls.querySelector("#fib-delete").onclick = (e) => {
     fibButtonClicked = true;
     spirals.splice(activeIdx, 1);
     if (spirals.length === 0) {
-        spirals.push({ squares: [], setup: null, size: window.innerWidth / 8, label: String.fromCharCode(nextLabelCode++) });
+        spirals.push({ squares: [], setup: null, size: window.innerWidth / 8, mirrored: false, label: String.fromCharCode(nextLabelCode++) });
         fibMessage.style.display = "block";
     }
     activeIdx = Math.min(activeIdx, spirals.length - 1);
@@ -137,7 +138,7 @@ fibControls.querySelector("#fib-delete").onclick = (e) => {
 fibControls.querySelector("#fib-new").onclick = (e) => {
     e.stopPropagation();
     fibButtonClicked = true;
-    spirals.push({ squares: [], setup: null, size: window.innerWidth / 8, label: String.fromCharCode(nextLabelCode++) });
+    spirals.push({ squares: [], setup: null, size: window.innerWidth / 8, mirrored: false, label: String.fromCharCode(nextLabelCode++) });
     activeIdx = spirals.length - 1;
     updateFibList();
     fibMessage.style.display = "block";
@@ -146,13 +147,13 @@ fibControls.querySelector("#fib-new").onclick = (e) => {
 fibControls.querySelector("#fib-minus").onclick = (e) => {
     e.stopPropagation(); fibButtonClicked = true;
     const sp = spirals[activeIdx];
-    sp.size = max(20, sp.size - 10);
+    sp.size = max(2, sp.size - 10);
     sp.squares = buildFibSquares(sp);
 };
 fibControls.querySelector("#fib-plus").onclick = (e) => {
     e.stopPropagation(); fibButtonClicked = true;
     const sp = spirals[activeIdx];
-    sp.size += 10;
+    sp.size += 2
     sp.squares = buildFibSquares(sp);
 };
 fibControls.querySelector("#fib-spin").onclick = (e) => {
@@ -170,6 +171,15 @@ fibControls.querySelector("#fib-spin").onclick = (e) => {
     }
 };
 
+fibControls.querySelector("#fib-mirror").onclick = (e) => {
+    e.stopPropagation(); fibButtonClicked = true;
+    const sp = spirals[activeIdx];
+    if (sp.setup) {
+        sp.mirrored = !sp.mirrored;
+        sp.squares = buildFibSquares(sp);
+    }
+};
+
 fibControls.querySelector("#fib-fit").onclick = (e) => {
     e.stopPropagation(); fibButtonClicked = true;
     const sp = spirals[activeIdx];
@@ -183,7 +193,8 @@ fibControls.querySelector("#fib-fit").onclick = (e) => {
     const scale = Math.min(window.innerWidth / (maxX - minX), window.innerHeight / (maxY - minY));
     const bboxCX = (minX + maxX) / 2;
     const bboxCY = (minY + maxY) / 2;
-    sp.setup.anchorX = window.innerWidth  / 2 + (sp.setup.anchorX - bboxCX) * scale;
+    const xSign = sp.mirrored ? -1 : 1;
+    sp.setup.anchorX = window.innerWidth  / 2 + xSign * (sp.setup.anchorX - bboxCX) * scale;
     sp.setup.anchorY = window.innerHeight / 2 + (sp.setup.anchorY - bboxCY) * scale;
     sp.size = sp.size * scale;
     sp.squares = buildFibSquares(sp);
@@ -192,7 +203,7 @@ fibControls.querySelector("#fib-fit").onclick = (e) => {
 fibBtn.onclick = () => {
     fibMode = true;
     nextLabelCode = 65;
-    spirals = [{ squares: [], setup: null, size: window.innerWidth / 16, label: String.fromCharCode(nextLabelCode++) }];
+    spirals = [{ squares: [], setup: null, size: window.innerWidth / 16, mirrored: false, label: String.fromCharCode(nextLabelCode++) }];
     activeIdx = 0;
     bottomBar.style.display = "none";
     fibBtn.style.display = "none";
@@ -260,10 +271,13 @@ function draw() {
             if (sp.squares.length === 0 && isActive) {
                 rect(width / 2, height / 2, sp.size, sp.size);
             } else {
+                const useMirror = sp.mirrored && sp.setup;
+                if (useMirror) { push(); translate(2 * sp.setup.anchorX, 0); scale(-1, 1); }
                 for (const sq of sp.squares) {
                     rect(sq.x, sq.y, sq.size || sp.size, sq.size || sp.size);
                 }
                 if (sp.squares.length >= 3) drawFibSpiral(sp);
+                if (useMirror) pop();
             }
         }
         rectMode(CORNER);
@@ -322,13 +336,14 @@ function windowResized() {
 
 function insideGrabArea(sp, mx, my) {
     if (!sp.setup || sp.squares.length < 2) return false;
+    const testX = sp.mirrored ? 2 * sp.setup.anchorX - mx : mx;
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const sq of sp.squares) {
         const s = sq.size / 2;
         minX = Math.min(minX, sq.x - s); minY = Math.min(minY, sq.y - s);
         maxX = Math.max(maxX, sq.x + s); maxY = Math.max(maxY, sq.y + s);
     }
-    return mx >= minX && mx <= maxX && my >= minY && my <= maxY;
+    return testX >= minX && testX <= maxX && my >= minY && my <= maxY;
 }
 
 function isOverFibUI() {

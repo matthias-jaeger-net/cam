@@ -91,18 +91,41 @@ updateFibList().
 
 10. DRAGGING A SPIRAL
 ---------------------
-insideGrabArea() checks if the tap is within the combined bounding box of
-sq1+sq2 (the "handle" area). If so, mousePressed() starts a drag: records
-which spiral and the offset from the anchor to the tap. mouseDragged()
-updates the anchor position each frame and rebuilds the spiral.
-mouseReleased() clears the drag state.
+insideGrabArea() checks if the tap is within the full bounding box of all
+squares in the spiral. If so, mousePressed() starts a drag: records which
+spiral and the offset from the anchor to the tap. mouseDragged() updates
+the anchor position each frame and rebuilds the spiral. mouseReleased()
+clears the drag state.
 
 
-11. DRAWING SPIRALS — OVERLAY CANVAS
--------------------------------------
-Spirals are drawn on a separate transparent <canvas id="fib-overlay"> that
-sits above the p5 canvas. Each frame, draw() clears it, draws all spiral
-rectangles (active = bright blue, others = faded), then uses
-destination-out compositing to punch out button-shaped holes — making
-spiral lines invisible exactly where buttons sit, so labels remain
-readable.
+11. DRAWING SPIRALS — p5 CANVAS
+---------------------------------
+Spirals are drawn directly on the p5 canvas each frame in draw(). Active
+spirals are bright blue; others are faded. The control buttons have opaque
+backgrounds (via CSS backdrop-filter) so spiral lines behind them are
+hidden, keeping labels readable.
+
+
+12. SPIRAL ARC — drawFibSpiral()
+----------------------------------
+Once a spiral has 3+ squares, drawFibSpiral() draws the Fibonacci spiral
+curve as a series of quarter-circle arcs — one per square.
+
+Each arc is a 90° arc of radius = square side length, centred at one
+corner of the square (the "inner" corner facing the centre of the spiral).
+The corner and angle range are looked up from a table indexed by the
+direction the square was placed (UP/RIGHT/DOWN/LEFT).
+
+The two innermost squares (sq1, sq2) use derived directions so their arcs
+connect seamlessly: together they form a semicircle. From sq3 onward the
+arc directions come directly from the buildFibSquares loop. Each arc's
+endpoint equals the next arc's start point, producing one continuous curve.
+
+
+13. FIT BUTTON
+--------------
+The "fit" button scales the active spiral to fill the screen and centres
+it. It measures the bounding box of all squares, computes the scale factor
+needed to fit within the screen dimensions, scales sp.size accordingly,
+and offsets the anchor so the bounding box centre lands at the screen
+centre. buildFibSquares() then rebuilds everything at the new size.

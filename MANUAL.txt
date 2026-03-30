@@ -40,6 +40,7 @@ arrange into a spiral.
   ↻        rotate the spiral direction 90° (cycles through 4 directions)
   new      freeze the current spiral and start a new one
   del      delete the active spiral
+  fit      scale and centre the active spiral so it fills the screen
 
 -- Spiral list (top left, appears when 2+ spirals exist) --
 Spirals are labelled A, B, C ...
@@ -48,9 +49,13 @@ The active spiral is shown at full brightness; others are dimmed.
 Deleting a spiral keeps the remaining labels unchanged
 (e.g. deleting A from [A, B, C] leaves [B, C]).
 
+-- Spiral arc --
+After placing 3 or more squares, the Fibonacci spiral arc is drawn
+inside the squares as a continuous quarter-circle curve.
+
 -- Moving a spiral --
-Press and hold within the area of the first two squares (the centre
-of the spiral) and drag to reposition it.
+Tap and drag anywhere within the bounding box of the spiral to
+reposition it.
 
 -- Taking a photo --
 Press the shutter button (top centre) to capture the scene.
