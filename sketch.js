@@ -295,6 +295,10 @@ function mouseReleased() {
     dragSpiralIdx = -1;
 }
 
+function touchStarted() { mousePressed(); return false; }
+function touchMoved()   { mouseDragged(); return false; }
+function touchEnded()   { mouseReleased(); return false; }
+
 function windowResized() {
     resizeCanvas(window.innerWidth, window.innerHeight);
 }
