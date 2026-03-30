@@ -26,15 +26,6 @@ function updateFibonacciCursor() {
 updateFibonacciCursor();
 window.addEventListener("resize", updateFibonacciCursor);
 
-fibonacciSquares.onclick = () => {
-    const msg = document.createElement("div");
-    msg.textContent = "please add the first fibonacci square";
-    msg.style.cssText = "position:fixed;top:20px;left:50%;transform:translateX(-50%);color:white;font-size:16px;z-index:1000;pointer-events:none;";
-    document.body.appendChild(msg);
-    setTimeout(() => msg.remove(), 3000);
-
-    fibSquare = { x: width / 2, y: height / 2, size: width / 8 };
-};
 
 function initCamera() {
     if (cam) cam.remove();
