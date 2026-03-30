@@ -1,6 +1,8 @@
 let cam;
 let facingMode = "environment";
 
+let fibSquare = null; // { x, y, size }
+
 const flashEl = document.getElementById("flash");
 const shutter = document.getElementById("shutter");
 const switchBtn = document.getElementById("switch-camera");
@@ -23,6 +25,16 @@ function updateFibonacciCursor() {
 
 updateFibonacciCursor();
 window.addEventListener("resize", updateFibonacciCursor);
+
+fibonacciSquares.onclick = () => {
+    const msg = document.createElement("div");
+    msg.textContent = "please add the first fibonacci square";
+    msg.style.cssText = "position:fixed;top:20px;left:50%;transform:translateX(-50%);color:white;font-size:16px;z-index:1000;pointer-events:none;";
+    document.body.appendChild(msg);
+    setTimeout(() => msg.remove(), 3000);
+
+    fibSquare = { x: width / 2, y: height / 2, size: width / 8 };
+};
 
 function initCamera() {
     if (cam) cam.remove();
@@ -71,6 +83,16 @@ function draw() {
     image(cam, width / 2 - w / 2, height / 2 - h / 2, w, h);
     pop();
 
+    // Fibonacci square
+    if (fibSquare) {
+        noFill();
+        stroke(0, 170, 255);
+        strokeWeight(2);
+        rectMode(CENTER);
+        rect(fibSquare.x, fibSquare.y, fibSquare.size, fibSquare.size);
+        rectMode(CORNER);
+    }
+
     // Rule of thirds guide lines
     stroke(255, 50);
     strokeWeight(1);
@@ -82,6 +104,13 @@ function draw() {
 
 function windowResized() {
     resizeCanvas(window.innerWidth, window.innerHeight);
+}
+
+function mousePressed() {
+    if (fibSquare) {
+        fibSquare.x = mouseX;
+        fibSquare.y = mouseY;
+    }
 }
 
 shutter.onclick = async () => {
