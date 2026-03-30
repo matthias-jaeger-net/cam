@@ -172,7 +172,7 @@ fibControls.querySelector("#fib-spin").onclick = (e) => {
 fibBtn.onclick = () => {
     fibMode = true;
     nextLabelCode = 65;
-    spirals = [{ squares: [], setup: null, size: window.innerWidth / 8, label: String.fromCharCode(nextLabelCode++) }];
+    spirals = [{ squares: [], setup: null, size: window.innerWidth / 16, label: String.fromCharCode(nextLabelCode++) }];
     activeIdx = 0;
     bottomBar.style.display = "none";
     fibBtn.style.display = "none";
