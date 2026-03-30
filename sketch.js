@@ -1,8 +1,6 @@
 let cam;
 let facingMode = "environment";
 
-let fibSquare = null; // { x, y, size }
-
 const flashEl = document.getElementById("flash");
 const shutter = document.getElementById("shutter");
 const switchBtn = document.getElementById("switch-camera");
@@ -13,18 +11,6 @@ const download = document.getElementById("download");
 const closeBtn = document.getElementById("close");
 
 closeBtn.onclick = () => overlay.classList.remove("active");
-
-const fibonacciSquares = document.getElementById("fibonacci-squares");
-
-function updateFibonacciCursor() {
-    const size = Math.round(window.innerWidth / 8);
-    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'><rect width='${size}' height='${size}' fill='none' stroke='white' stroke-width='1'/></svg>`;
-    const url = `url("data:image/svg+xml,${encodeURIComponent(svg)}") ${size / 2} ${size / 2}, crosshair`;
-    fibonacciSquares.style.cursor = url;
-}
-
-updateFibonacciCursor();
-window.addEventListener("resize", updateFibonacciCursor);
 
 
 function initCamera() {
@@ -74,16 +60,6 @@ function draw() {
     image(cam, width / 2 - w / 2, height / 2 - h / 2, w, h);
     pop();
 
-    // Fibonacci square
-    if (fibSquare) {
-        noFill();
-        stroke(0, 170, 255);
-        strokeWeight(2);
-        rectMode(CENTER);
-        rect(fibSquare.x, fibSquare.y, fibSquare.size, fibSquare.size);
-        rectMode(CORNER);
-    }
-
     // Rule of thirds guide lines
     stroke(255, 50);
     strokeWeight(1);
@@ -97,12 +73,6 @@ function windowResized() {
     resizeCanvas(window.innerWidth, window.innerHeight);
 }
 
-function mousePressed() {
-    if (fibSquare) {
-        fibSquare.x = mouseX;
-        fibSquare.y = mouseY;
-    }
-}
 
 shutter.onclick = async () => {
     flashEl.style.opacity = 1;
