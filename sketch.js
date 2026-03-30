@@ -125,23 +125,34 @@ function draw() {
 
     push();
 
-    // Apply gyroscope tilt effect if enabled
-    if (gyroEnabled && hasGyro) {
-        translate(width / 2, height / 2);
-        // Map gyro values to rotation (limit rotation for usability)
-        let tiltX = map(gyroBeta, -90, 90, -15, 15, true);
-        let tiltY = map(gyroGamma, -90, 90, -15, 15, true);
-        rotateX(radians(tiltX * 0.3));
-        rotateY(radians(tiltY * 0.3));
-        translate(-width / 2, -height / 2);
-    }
-
     if (facingMode === "user") {
         translate(width, 0);
         scale(-1, 1);
     }
 
-    image(cam, width / 2 - w / 2, height / 2 - h / 2, w, h);
+    let imgX = width / 2 - w / 2;
+    let imgY = height / 2 - h / 2;
+
+    // Apply gyroscope pan effect if enabled
+    if (gyroEnabled && hasGyro) {
+        // Create a subtle panning effect based on device tilt
+        // Map gyro values to pixel offsets (max 30px pan)
+        let panX = map(gyroGamma, -45, 45, -30, 30, true);
+        let panY = map(gyroBeta, -45, 45, 30, -30, true);
+        imgX += panX;
+        imgY += panY;
+
+        // Slight zoom based on tilt angle
+        let tiltMagnitude = sqrt(gyroBeta * gyroBeta + gyroGamma * gyroGamma);
+        let zoomAmount = 1 + map(tiltMagnitude, 0, 45, 0, 0.05, true);
+
+        // Apply zoom centered on canvas
+        translate(width / 2, height / 2);
+        scale(zoomAmount);
+        translate(-width / 2, -height / 2);
+    }
+
+    image(cam, imgX, imgY, w, h);
     pop();
 
     // Rule of thirds guide lines
