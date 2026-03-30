@@ -101,8 +101,34 @@ img {
     background: rgba(0, 170, 255, 0.3);
 }
 
+/* Fibonacci overlay canvas */
+#fib-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 999;
+}
+
+/* Fib shutter */
+#fib-shutter {
+    position: fixed;
+    top: calc(16px + env(safe-area-inset-top));
+    left: 50%;
+    transform: translateX(-50%);
+    display: none;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 4px solid #0af;
+    background: rgba(0, 170, 255, 0.3);
+    backdrop-filter: blur(10px);
+    cursor: pointer;
+    z-index: 1000;
+}
+
 /* Press feedback */
-#shutter:active {
+#shutter:active,
+#fib-shutter:active {
     transform: scale(0.92);
     background: #0af;
 }
