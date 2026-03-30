@@ -263,6 +263,7 @@ function draw() {
                 for (const sq of sp.squares) {
                     rect(sq.x, sq.y, sq.size || sp.size, sq.size || sp.size);
                 }
+                if (sp.squares.length >= 3) drawFibSpiral(sp);
             }
         }
         rectMode(CORNER);
@@ -275,6 +276,26 @@ function draw() {
     line((2 * width) / 3, 0, (2 * width) / 3, height);
     line(0, height / 3, width, height / 3);
     line(0, (2 * height) / 3, width, (2 * height) / 3);
+}
+
+function drawFibSpiral(sp) {
+    const { sq2DirIndex } = sp.setup;
+    const arcDef = [
+        { dx:  0.5, dy:  0.5, a1: PI,       a2: PI * 1.5 },  // 0 UP
+        { dx: -0.5, dy:  0.5, a1: PI * 1.5, a2: TWO_PI   },  // 1 RIGHT
+        { dx: -0.5, dy: -0.5, a1: 0,        a2: HALF_PI  },  // 2 DOWN
+        { dx:  0.5, dy: -0.5, a1: HALF_PI,  a2: PI       },  // 3 LEFT
+    ];
+    const dirs = [(sq2DirIndex + 2) % 4, (sq2DirIndex + 1) % 4];
+    let d = (sq2DirIndex - 1 + 4) % 4;
+    for (let i = 2; i < sp.squares.length; i++) { dirs.push(d); d = (d + 1) % 4; }
+    noFill();
+    for (let i = 0; i < sp.squares.length; i++) {
+        const sq = sp.squares[i];
+        const s = sq.size;
+        const { dx, dy, a1, a2 } = arcDef[dirs[i]];
+        arc(sq.x + dx * s, sq.y + dy * s, 2 * s, 2 * s, a1, a2);
+    }
 }
 
 function mouseDragged() {
