@@ -301,12 +301,13 @@ function windowResized() {
 
 function insideGrabArea(sp, mx, my) {
     if (!sp.setup || sp.squares.length < 2) return false;
-    const { anchorX, anchorY, sq2DirIndex } = sp.setup;
-    const d = FIB_DIRS[sq2DirIndex];
-    const hw = d.dx !== 0 ? sp.size : sp.size / 2;
-    const hh = d.dy !== 0 ? sp.size : sp.size / 2;
-    return mx >= anchorX - hw && mx <= anchorX + hw &&
-           my >= anchorY - hh && my <= anchorY + hh;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const sq of sp.squares) {
+        const s = sq.size / 2;
+        minX = Math.min(minX, sq.x - s); minY = Math.min(minY, sq.y - s);
+        maxX = Math.max(maxX, sq.x + s); maxY = Math.max(maxY, sq.y + s);
+    }
+    return mx >= minX && mx <= maxX && my >= minY && my <= maxY;
 }
 
 function isOverFibUI() {
