@@ -21,29 +21,38 @@ let hasGyro = false;
 
 closeBtn.onclick = () => overlay.classList.remove("active");
 
+// Check if device supports gyroscope
+function checkGyroSupport() {
+    return (
+        typeof DeviceOrientationEvent !== "undefined" &&
+        typeof DeviceOrientationEvent.requestPermission === "function"
+    );
+}
+
 // Gyroscope permission request (iOS 13+)
 if (permissionBtn) {
     permissionBtn.onclick = async () => {
-        if (
-            typeof DeviceOrientationEvent !== "undefined" &&
-            typeof DeviceOrientationEvent.requestPermission === "function"
-        ) {
+        if (checkGyroSupport()) {
             try {
                 const permission =
                     await DeviceOrientationEvent.requestPermission();
                 if (permission === "granted") {
                     hasGyro = true;
-                    permissionBtn.style.opacity = "0.5";
-                    permissionBtn.disabled = true;
+                    permissionBtn.innerHTML = "✓ 📍";
+                    console.log("Gyroscope permission granted");
+                } else {
+                    console.warn("Gyroscope permission denied");
+                    alert("Gyroscope access denied");
                 }
             } catch (error) {
-                console.error("Permission denied:", error);
+                console.error("Permission error:", error);
+                alert("Error requesting permission");
             }
         } else {
-            // Non-iOS or older devices
+            // Non-iOS or older devices - assume support
             hasGyro = true;
-            permissionBtn.style.opacity = "0.5";
-            permissionBtn.disabled = true;
+            permissionBtn.innerHTML = "✓ 📍";
+            console.log("Gyroscope assumed available");
         }
     };
 }
@@ -57,15 +66,23 @@ if (gyroToggle) {
         }
         gyroEnabled = !gyroEnabled;
         gyroToggle.classList.toggle("active", gyroEnabled);
+        console.log("Gyroscope toggled:", gyroEnabled);
     };
 }
 
-// Listen for device orientation
+// Listen for device orientation events
+window.addEventListener("deviceorientationabsolute", (event) => {
+    gyroAlpha = event.alpha || 0; // 0 to 360
+    gyroBeta = event.beta || 0; // -180 to 180
+    gyroGamma = event.gamma || 0; // -90 to 90
+});
+
 window.addEventListener("deviceorientation", (event) => {
-    if (hasGyro) {
-        gyroAlpha = event.alpha || 0; // 0 to 360
-        gyroBeta = event.beta || 0; // -180 to 180
-        gyroGamma = event.gamma || 0; // -90 to 90
+    if (!window.ondeviceorientationabsolute) {
+        // Fallback if absolute isn't supported
+        gyroAlpha = event.alpha || 0;
+        gyroBeta = event.beta || 0;
+        gyroGamma = event.gamma || 0;
     }
 });
 
