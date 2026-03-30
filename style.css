@@ -148,4 +148,5 @@ button {
     color: #0af;
     background: none;
     border: none;
+    cursor: pointer;
 }
