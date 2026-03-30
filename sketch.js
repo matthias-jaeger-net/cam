@@ -12,6 +12,18 @@ const closeBtn = document.getElementById("close");
 
 closeBtn.onclick = () => overlay.classList.remove("active");
 
+const fibonacciSquares = document.getElementById("fibonacci-squares");
+
+function updateFibonacciCursor() {
+    const size = Math.round(window.innerWidth / 8);
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'><rect width='${size}' height='${size}' fill='none' stroke='white' stroke-width='1'/></svg>`;
+    const url = `url("data:image/svg+xml,${encodeURIComponent(svg)}") ${size / 2} ${size / 2}, crosshair`;
+    fibonacciSquares.style.cursor = url;
+}
+
+updateFibonacciCursor();
+window.addEventListener("resize", updateFibonacciCursor);
+
 function initCamera() {
     if (cam) cam.remove();
 
