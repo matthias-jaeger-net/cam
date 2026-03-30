@@ -188,9 +188,9 @@ function drawLevelIndicator() {
     let centerY = height / 2;
     let lineLength = 100;
 
-    // Rotate based on beta (forward/backward tilt)
+    // Rotate based on gamma (left/right tilt)
     translate(centerX, centerY);
-    rotate(radians(gyroBeta));
+    rotate(radians(gyroGamma));
 
     // Draw horizontal line
     stroke(0, 255, 100);
