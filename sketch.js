@@ -49,10 +49,35 @@ async function requestGyroPermission() {
 
 // Gyroscope toggle
 if (gyroToggle) {
-    gyroToggle.onclick = () => {
-        gyroEnabled = !gyroEnabled;
-        gyroToggle.classList.toggle("active", gyroEnabled);
-        console.log("Gyroscope toggled:", gyroEnabled);
+    gyroToggle.onclick = async () => {
+        if (!hasGyro) {
+            // Request permission first (must be in response to user tap)
+            if (checkGyroSupport()) {
+                try {
+                    const permission =
+                        await DeviceOrientationEvent.requestPermission();
+                    if (permission === "granted") {
+                        hasGyro = true;
+                        console.log("Gyroscope permission granted");
+                        // Now enable gyro after permission
+                        gyroEnabled = true;
+                        gyroToggle.classList.toggle("active", true);
+                    }
+                } catch (error) {
+                    console.log("Gyroscope permission denied");
+                }
+            } else {
+                // Non-iOS or older devices - assume support
+                hasGyro = true;
+                gyroEnabled = true;
+                gyroToggle.classList.toggle("active", true);
+            }
+        } else {
+            // Already have permission, just toggle
+            gyroEnabled = !gyroEnabled;
+            gyroToggle.classList.toggle("active", gyroEnabled);
+            console.log("Gyroscope toggled:", gyroEnabled);
+        }
     };
 }
 
@@ -89,7 +114,6 @@ function setup() {
     const c = createCanvas(window.innerWidth, window.innerHeight);
     c.parent("camera-container");
     initCamera();
-    requestGyroPermission(); // Auto-request gyro permission
 }
 
 function draw() {
