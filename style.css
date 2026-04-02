@@ -194,3 +194,63 @@ button {
     border: none;
     cursor: pointer;
 }
+
+/* 🔝 Top bar */
+.top-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+
+    padding: 20px;
+    padding-top: calc(20px + env(safe-area-inset-top)); /* iPhone safe area */
+    gap: 10px;
+
+    z-index: 10;
+
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), transparent);
+}
+
+/* Gyroscope buttons */
+.top-bar button {
+    width: 50px;
+    height: 50px;
+
+    border-radius: 50%;
+    border: none;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+
+    color: #0af;
+    font-size: 20px;
+
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.top-bar button:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.top-bar button:active {
+    transform: scale(0.92);
+}
+
+#gyro-toggle.active {
+    background: rgba(0, 170, 255, 0.4);
+    border: 2px solid #0af;
+}
+
+#gyro-permission:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
