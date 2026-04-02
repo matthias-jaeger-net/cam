@@ -181,38 +181,39 @@ function draw() {
 }
 
 function drawLevelIndicator() {
-    // Simple rotating line indicator
-    push();
-
     let centerX = width / 2;
     let centerY = height / 2;
     let lineLength = 100;
 
-    // Rotate based on gamma (left/right tilt)
+    // Blue vertical line rotating with alpha (compass / Z-axis)
+    push();
     translate(centerX, centerY);
-    rotate(radians(gyroGamma));
-
-    // Draw horizontal line
-    stroke(0, 255, 100);
+    rotate(radians(gyroAlpha));
+    stroke(0, 120, 255);
     strokeWeight(3);
-    line(-lineLength, 0, lineLength, 0);
-
-    // Draw center point
-    fill(0, 255, 100);
-    noStroke();
-    circle(0, 0, 8);
-
+    line(0, -lineLength, 0, lineLength);
     pop();
 
-    // Draw numeric gyro values
+    // Red line tilting with beta (forward/back tilt / X-axis)
+    push();
+    translate(centerX, centerY);
+    rotate(radians(gyroBeta));
+    stroke(255, 50, 50);
+    strokeWeight(3);
+    line(-lineLength, 0, lineLength, 0);
+    pop();
+
+    // Draw numeric gyro values (left side, vertically centred)
     push();
     textSize(14);
     textFont("monospace");
     noStroke();
     fill(0, 255, 100);
-    text(`α ${nf(gyroAlpha, 1, 1)}°`, 12, height - 54);
-    text(`β ${nf(gyroBeta, 1, 1)}°`, 12, height - 36);
-    text(`γ ${nf(gyroGamma, 1, 1)}°`, 12, height - 18);
+    let lineH = 20;
+    let startY = height / 2 - lineH;
+    text(`α ${nf(gyroAlpha, 1, 1)}°`, 12, startY);
+    text(`β ${nf(gyroBeta, 1, 1)}°`, 12, startY + lineH);
+    text(`γ ${nf(gyroGamma, 1, 1)}°`, 12, startY + lineH * 2);
     pop();
 }
 
