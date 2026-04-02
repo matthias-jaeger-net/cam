@@ -203,6 +203,17 @@ function drawLevelIndicator() {
     circle(0, 0, 8);
 
     pop();
+
+    // Draw numeric gyro values
+    push();
+    textSize(14);
+    textFont("monospace");
+    noStroke();
+    fill(0, 255, 100);
+    text(`α ${nf(gyroAlpha, 1, 1)}°`, 12, height - 54);
+    text(`β ${nf(gyroBeta, 1, 1)}°`, 12, height - 36);
+    text(`γ ${nf(gyroGamma, 1, 1)}°`, 12, height - 18);
+    pop();
 }
 
 function windowResized() {
