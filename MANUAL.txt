@@ -1,0 +1,63 @@
+CAM — USER MANUAL
+=================
+
+
+CAMERA MODE
+-----------
+The app opens in camera mode showing a live camera feed.
+
+  Settings button (bottom left)   — opens settings
+  Shutter button  (bottom centre) — takes a photo
+  Switch camera   (bottom right)  — toggles front/back camera
+
+After taking a photo, an overlay shows the captured image.
+  Download button (top left of overlay)  — saves the photo
+  Close button    (top right of overlay) — returns to camera
+
+
+FIBONACCI SQUARES MODE
+----------------------
+Press the button in the top right corner to enter Fibonacci mode.
+The bottom bar is hidden. The live camera feed stays visible.
+
+-- Placing the first square --
+A guide square appears in the centre of the screen.
+Tap anywhere to place the centre of the first square.
+
+-- Placing the second square --
+Tap on any of the 4 sides of the first square to place the second
+square. The direction you choose determines the orientation of the
+spiral.
+
+-- Adding more squares --
+Each tap adds the next Fibonacci square. Squares grow following the
+Fibonacci sequence (1, 1, 2, 3, 5, 8, 13 ...) and automatically
+arrange into a spiral.
+
+-- Controls (bottom centre) --
+  −        decrease the size of the active spiral
+  +        increase the size of the active spiral
+  ↻        rotate the spiral direction 90° (cycles through 4 directions)
+  new      freeze the current spiral and start a new one
+  del      delete the active spiral
+  fit      scale and centre the active spiral so it fills the screen
+
+-- Spiral list (top left, appears when 2+ spirals exist) --
+Spirals are labelled A, B, C ...
+Tap a label to select and edit that spiral.
+The active spiral is shown at full brightness; others are dimmed.
+Deleting a spiral keeps the remaining labels unchanged
+(e.g. deleting A from [A, B, C] leaves [B, C]).
+
+-- Spiral arc --
+After placing 3 or more squares, the Fibonacci spiral arc is drawn
+inside the squares as a continuous quarter-circle curve.
+
+-- Moving a spiral --
+Tap and drag anywhere within the bounding box of the spiral to
+reposition it.
+
+-- Taking a photo --
+Press the shutter button (top centre) to capture the scene.
+The spiral overlays are NOT included in the photo — only the camera
+image is captured.
