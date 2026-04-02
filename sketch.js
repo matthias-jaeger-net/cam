@@ -11,39 +11,39 @@ const overlayImage = document.getElementById("overlay-image");
 const download = document.getElementById("download");
 const closeBtn = document.getElementById("close");
 
-// Gyroscope variables
+// Motion/tilt variables (from accelerometer gravity vector)
 let gyroEnabled = false;
-let gyroAlpha = 0; // rotation around Z axis
-let gyroBeta = 0; // rotation around X axis (forward/backward tilt)
-let gyroGamma = 0; // rotation around Y axis (left/right tilt)
+let accelX = 0; // left/right tilt (+right, -left)
+let accelY = -9.8; // up/down (upright ≈ -9.8)
+let accelZ = 0; // forward/back tilt
 let hasGyro = false;
 
 closeBtn.onclick = () => overlay.classList.remove("active");
 
-// Check if device supports gyroscope
+// Check if device requires explicit motion permission (iOS 13+)
 function checkGyroSupport() {
     return (
-        typeof DeviceOrientationEvent !== "undefined" &&
-        typeof DeviceOrientationEvent.requestPermission === "function"
+        typeof DeviceMotionEvent !== "undefined" &&
+        typeof DeviceMotionEvent.requestPermission === "function"
     );
 }
 
-// Auto-request gyroscope permission on app load
+// Auto-request motion permission on app load
 async function requestGyroPermission() {
     if (checkGyroSupport()) {
         try {
-            const permission = await DeviceOrientationEvent.requestPermission();
+            const permission = await DeviceMotionEvent.requestPermission();
             if (permission === "granted") {
                 hasGyro = true;
-                console.log("Gyroscope permission granted automatically");
+                console.log("Motion permission granted automatically");
             }
         } catch (error) {
-            console.log("Gyroscope permission not available");
+            console.log("Motion permission not available");
         }
     } else {
         // Non-iOS or older devices - assume support
         hasGyro = true;
-        console.log("Gyroscope assumed available");
+        console.log("Motion assumed available");
     }
 }
 
@@ -55,7 +55,7 @@ if (gyroToggle) {
             if (checkGyroSupport()) {
                 try {
                     const permission =
-                        await DeviceOrientationEvent.requestPermission();
+                        await DeviceMotionEvent.requestPermission();
                     if (permission === "granted") {
                         hasGyro = true;
                         console.log("Gyroscope permission granted");
@@ -81,19 +81,13 @@ if (gyroToggle) {
     };
 }
 
-// Listen for device orientation events
-window.addEventListener("deviceorientationabsolute", (event) => {
-    gyroAlpha = event.alpha || 0; // 0 to 360
-    gyroBeta = event.beta || 0; // -180 to 180
-    gyroGamma = event.gamma || 0; // -90 to 90
-});
-
-window.addEventListener("deviceorientation", (event) => {
-    if (!window.ondeviceorientationabsolute) {
-        // Fallback if absolute isn't supported
-        gyroAlpha = event.alpha || 0;
-        gyroBeta = event.beta || 0;
-        gyroGamma = event.gamma || 0;
+// Listen for accelerometer gravity vector
+window.addEventListener("devicemotion", (event) => {
+    const g = event.accelerationIncludingGravity;
+    if (g) {
+        accelX = g.x || 0;
+        accelY = g.y || 0;
+        accelZ = g.z || 0;
     }
 });
 
@@ -144,23 +138,12 @@ function draw() {
     let imgX = width / 2 - w / 2;
     let imgY = height / 2 - h / 2;
 
-    // Apply gyroscope pan effect if enabled
+    // Apply pan effect based on gravity vector
     if (gyroEnabled && hasGyro) {
-        // Create a subtle panning effect based on device tilt
-        // Map gyro values to pixel offsets (max 30px pan)
-        let panX = map(gyroGamma, -45, 45, -30, 30, true);
-        let panY = map(gyroBeta, -45, 45, 30, -30, true);
+        let panX = map(accelX, -9.8, 9.8, -30, 30, true);
+        let panY = map(accelZ, -9.8, 9.8, -30, 30, true);
         imgX += panX;
         imgY += panY;
-
-        // Slight zoom based on tilt angle
-        let tiltMagnitude = sqrt(gyroBeta * gyroBeta + gyroGamma * gyroGamma);
-        let zoomAmount = 1 + map(tiltMagnitude, 0, 45, 0, 0.05, true);
-
-        // Apply zoom centered on canvas
-        translate(width / 2, height / 2);
-        scale(zoomAmount);
-        translate(-width / 2, -height / 2);
     }
 
     image(cam, imgX, imgY, w, h);
@@ -185,35 +168,27 @@ function drawLevelIndicator() {
     let centerY = height / 2;
     let lineLength = 100;
 
-    // Blue vertical line rotating with alpha (compass / Z-axis)
+    // Derive roll angle from gravity vector (left/right tilt)
+    // atan2(x, -y): 0° = upright, positive = tilted right
+    let rollAngle = atan2(accelX, -accelY);
+
+    // Blue vertical line rotating with physical roll angle
     push();
     translate(centerX, centerY);
-    rotate(radians(gyroAlpha));
+    rotate(rollAngle);
     stroke(0, 120, 255);
     strokeWeight(3);
     line(0, -lineLength, 0, lineLength);
     pop();
 
-    // Red line tilting with beta (forward/back tilt / X-axis)
-    push();
-    translate(centerX, centerY);
-    rotate(radians(gyroBeta));
-    stroke(255, 50, 50);
-    strokeWeight(3);
-    line(-lineLength, 0, lineLength, 0);
-    pop();
-
-    // Draw numeric gyro values (left side, vertically centred)
+    // Numeric tilt value (left side, vertically centred)
     push();
     textSize(14);
     textFont("monospace");
     noStroke();
-    fill(0, 255, 100);
-    let lineH = 20;
-    let startY = height / 2 - lineH;
-    text(`α ${nf(gyroAlpha, 1, 1)}°`, 12, startY);
-    text(`β ${nf(gyroBeta, 1, 1)}°`, 12, startY + lineH);
-    text(`γ ${nf(gyroGamma, 1, 1)}°`, 12, startY + lineH * 2);
+    fill(0, 120, 255);
+    let tiltDeg = degrees(rollAngle);
+    text(`tilt ${nf(tiltDeg, 1, 1)}°`, 12, height / 2);
     pop();
 }
 
