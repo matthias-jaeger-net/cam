@@ -26,12 +26,14 @@ const closeBtn = document.getElementById("close");
 
 function hideFibUI() {
     [fibControls, fibList, fibShutter, fibMessage].forEach(el => el.style.display = "none");
+    shutter.style.display = "";
 }
 
 function restoreFibUI() {
     fibControls.style.display = "flex";
     if (spirals.length > 1) fibList.style.display = "flex";
     fibShutter.style.display = "block";
+    shutter.style.display = "none";
 }
 
 closeBtn.onclick = () => {
@@ -50,7 +52,6 @@ fibControls.style.cssText = "position:fixed;bottom:40px;left:50%;transform:trans
 fibControls.innerHTML = `
     <button id="fib-minus">−</button>
     <button id="fib-plus">+</button>
-    <span style="display:inline-block;width:20px;"></span>
     <button id="fib-spin">↻</button>
     <button id="fib-mirror">mirror</button>
     <button id="fib-new">new</button>
@@ -201,15 +202,29 @@ fibControls.querySelector("#fib-fit").onclick = (e) => {
     sp.squares = buildFibSquares(sp);
 };
 
+const settingsBtn = document.getElementById("settings");
+
 fibBtn.onclick = () => {
-    fibMode = true;
-    nextLabelCode = 65;
-    spirals = [{ squares: [], setup: null, size: window.innerWidth / 16, mirrored: false, label: String.fromCharCode(nextLabelCode++) }];
-    activeIdx = 0;
-    bottomBar.style.display = "none";
-    fibBtn.style.display = "none";
-    fibMessage.style.display = "block";
-    updateFibList();
+    fibMode = !fibMode;
+    fibBtn.classList.toggle("active", fibMode);
+
+    if (fibMode) {
+        // Enter fib mode
+        nextLabelCode = 65;
+        spirals = [{ squares: [], setup: null, size: window.innerWidth / 16, mirrored: false, label: String.fromCharCode(nextLabelCode++) }];
+        activeIdx = 0;
+        switchBtn.style.display = "none";
+        settingsBtn.style.display = "none";
+        fibMessage.style.display = "block";
+        updateFibList();
+    } else {
+        // Exit fib mode
+        hideFibUI();
+        spirals = [];
+        activeIdx = -1;
+        switchBtn.style.display = "";
+        settingsBtn.style.display = "";
+    }
 };
 
 // Motion/tilt variables (from accelerometer gravity vector)
@@ -303,6 +318,30 @@ function initCamera() {
     cam.elt.setAttribute("playsinline", true); // iOS fix
     cam.elt.muted = true;
     cam.hide();
+}
+
+async function setFocusPoint(x, y) {
+    // x, y are canvas pixel coordinates
+    const track = cam && cam.elt.srcObject && cam.elt.srcObject.getVideoTracks()[0];
+    if (!track) return;
+
+    const capabilities = track.getCapabilities();
+    if (!capabilities.focusMode || !capabilities.pointOfInterest) return;
+
+    // Normalise canvas coords to 0-1, then flip for back camera
+    const nx = x / width;
+    const ny = y / height;
+
+    try {
+        await track.applyConstraints({
+            advanced: [{
+                focusMode: "manual",
+                pointOfInterest: { x: nx, y: ny }
+            }]
+        });
+    } catch (e) {
+        console.log("Focus point not supported:", e);
+    }
 }
 
 function setup() {
@@ -503,6 +542,8 @@ function mousePressed() {
             fibControls.style.display = "flex";
             fibMessage.style.display = "none";
             fibShutter.style.display = "block";
+            shutter.style.display = "none";
+            setFocusPoint(sp.squares[0].x, sp.squares[0].y);
         } else if (sp.squares.length === 1) {
             const first = sp.squares[0];
             const dx = mouseX - first.x;
