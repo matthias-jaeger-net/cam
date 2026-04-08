@@ -13,6 +13,8 @@ let activeIdx = -1;
 let nextLabelCode = 65; // 65 = 'A'
 let includeOverlaysInPhoto = false;
 
+let symetry = false;
+
 const flashEl = document.getElementById("flash");
 const shutter = document.getElementById("shutter");
 const switchBtn = document.getElementById("switch-camera");
@@ -236,8 +238,8 @@ fibControls.querySelector("#fib-fit").onclick = (e) => {
 const settingsBtn = document.getElementById("settings");
 
 settingsBtn.onclick = () => {
-    includeOverlaysInPhoto = !includeOverlaysInPhoto;
-    settingsBtn.style.opacity = includeOverlaysInPhoto ? "1" : "0.5";
+    symetry = !symetry;
+    console.log("Symmetry toggled:", symetry);
 };
 
 fibBtn.onclick = () => {
@@ -435,7 +437,20 @@ function draw() {
         imgY += panY;
     }
 
-    image(cam, imgX, imgY, w, h);
+    if (!symetry) {
+        image(cam, 0, 0, w, h);
+    } else {
+        const half = cam.get(0, 0, cam.width / 2, cam.height);
+
+        image(half, 0, 0, w / 2, h);
+
+        push();
+        translate(w, 0);
+        scale(-1, 1);
+        image(half, 0, 0, w / 2, h);
+        pop();
+    }
+
     pop();
 
     // Fibonacci squares
