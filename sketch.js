@@ -772,11 +772,46 @@ async function takePhoto() {
     const x = width / 2 - w / 2;
     const y = height / 2 - h / 2;
 
-    if (facingMode === "user") {
-        ctx.translate(width, 0);
+    if (!symetry) {
+        // Normal draw
+        if (facingMode === "user") {
+            ctx.translate(width, 0);
+            ctx.scale(-1, 1);
+        }
+        ctx.drawImage(videoEl, x, y, w, h);
+    } else {
+        // Draw HALF of the video first
+        const halfWidth = videoEl.videoWidth / 2;
+
+        // Create temp canvas to extract half
+        const temp = document.createElement("canvas");
+        temp.width = halfWidth;
+        temp.height = videoEl.videoHeight;
+        const tctx = temp.getContext("2d");
+
+        // Draw left half of video into temp canvas
+        tctx.drawImage(
+            videoEl,
+            0,
+            0,
+            halfWidth,
+            videoEl.videoHeight,
+            0,
+            0,
+            halfWidth,
+            videoEl.videoHeight,
+        );
+
+        // Draw left half normally
+        ctx.drawImage(temp, x, y, w / 2, h);
+
+        // Draw mirrored half
+        ctx.save();
+        ctx.translate(x + w, 0);
         ctx.scale(-1, 1);
+        ctx.drawImage(temp, x, y, w / 2, h);
+        ctx.restore();
     }
-    ctx.drawImage(videoEl, x, y, w, h);
 
     // Draw overlays if enabled
     if (includeOverlaysInPhoto) {
