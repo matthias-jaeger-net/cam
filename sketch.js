@@ -2,6 +2,7 @@ let cam;
 let facingMode = "environment";
 
 let fibMode = false;
+let fibSpiralOnPhoto = false;
 let fibButtonClicked = false;
 let dragging = false;
 let dragSpiralIdx = -1;
@@ -11,9 +12,11 @@ let dragOffsetY = 0;
 let spirals = []; // [{ squares, setup, size, label }]
 let activeIdx = -1;
 let nextLabelCode = 65; // 65 = 'A'
-let includeOverlaysInPhoto = false;
 
-let symetry = false;
+const fibShutter = document.createElement("button");
+fibShutter.id = "fib-shutter";
+fibShutter.onclick = (e) => { e.stopPropagation(); fibButtonClicked = true; takePhoto(); };
+document.body.appendChild(fibShutter);
 
 const flashEl = document.getElementById("flash");
 const shutter = document.getElementById("shutter");
@@ -52,6 +55,24 @@ closeBtn.onclick = () => {
     overlay.classList.remove("active");
     if (fibMode) restoreFibUI();
 };
+
+const fibMessage = document.createElement("div");
+fibMessage.textContent = "place the centre of the fibonacci squares";
+fibMessage.style.cssText = "position:fixed;top:20px;left:50%;transform:translateX(-50%);color:white;font-size:16px;z-index:1000;pointer-events:none;display:none;white-space:nowrap;";
+document.body.appendChild(fibMessage);
+
+const fibControls = document.createElement("div");
+fibControls.id = "fib-controls-bar";
+fibControls.style.cssText = "position:fixed;bottom:40px;left:50%;transform:translateX(-50%);display:none;gap:20px;z-index:1000;align-items:center;";
+fibControls.innerHTML = `
+    <button id="fib-minus">−</button>
+    <button id="fib-plus">+</button>
+    <button id="fib-spin">↻</button>
+    <button id="fib-mirror">mirror</button>
+    <button id="fib-fit">fit</button>
+    <button id="fib-on-photo">overlay</button>
+`;
+document.body.appendChild(fibControls);
 
 const FIB_DIRS = [
     { dx: 0, dy: -1 }, // 0: UP
@@ -136,14 +157,7 @@ fibControls.querySelector("#fib-delete").onclick = (e) => {
     fibButtonClicked = true;
     spirals.splice(activeIdx, 1);
     if (spirals.length === 0) {
-        spirals.push({
-            squares: [],
-            setup: null,
-            size: window.innerWidth / 8,
-            mirrored: false,
-            label: String.fromCharCode(nextLabelCode++),
-        });
-        fibMessage.style.display = "block";
+        spirals.push(createDefaultSpiral());
     }
     activeIdx = Math.min(activeIdx, spirals.length - 1);
     updateFibList();
@@ -152,16 +166,9 @@ fibControls.querySelector("#fib-delete").onclick = (e) => {
 fibControls.querySelector("#fib-new").onclick = (e) => {
     e.stopPropagation();
     fibButtonClicked = true;
-    spirals.push({
-        squares: [],
-        setup: null,
-        size: window.innerWidth / 8,
-        mirrored: false,
-        label: String.fromCharCode(nextLabelCode++),
-    });
+    spirals.push(createDefaultSpiral());
     activeIdx = spirals.length - 1;
     updateFibList();
-    fibMessage.style.display = "block";
 };
 
 fibControls.querySelector("#fib-minus").onclick = (e) => {
@@ -170,6 +177,7 @@ fibControls.querySelector("#fib-minus").onclick = (e) => {
     const sp = spirals[activeIdx];
     sp.size = max(2, sp.size - 10);
     sp.squares = buildFibSquares(sp);
+    focusOnSpiral(sp);
 };
 fibControls.querySelector("#fib-plus").onclick = (e) => {
     e.stopPropagation();
@@ -177,6 +185,7 @@ fibControls.querySelector("#fib-plus").onclick = (e) => {
     const sp = spirals[activeIdx];
     sp.size += 2;
     sp.squares = buildFibSquares(sp);
+    focusOnSpiral(sp);
 };
 fibControls.querySelector("#fib-spin").onclick = (e) => {
     e.stopPropagation();
@@ -191,6 +200,7 @@ fibControls.querySelector("#fib-spin").onclick = (e) => {
         sp.setup.anchorX = sq1x + (nd.dx * sp.size) / 2;
         sp.setup.anchorY = sq1y + (nd.dy * sp.size) / 2;
         sp.squares = buildFibSquares(sp);
+        focusOnSpiral(sp);
     }
 };
 
@@ -201,6 +211,7 @@ fibControls.querySelector("#fib-mirror").onclick = (e) => {
     if (sp.setup) {
         sp.mirrored = !sp.mirrored;
         sp.squares = buildFibSquares(sp);
+        focusOnSpiral(sp);
     }
 };
 
@@ -233,45 +244,69 @@ fibControls.querySelector("#fib-fit").onclick = (e) => {
         window.innerHeight / 2 + (sp.setup.anchorY - bboxCY) * scale;
     sp.size = sp.size * scale;
     sp.squares = buildFibSquares(sp);
+    focusOnSpiral(sp);
+};
+
+fibControls.querySelector("#fib-on-photo").onclick = (e) => {
+    e.stopPropagation(); fibButtonClicked = true;
+    fibSpiralOnPhoto = !fibSpiralOnPhoto;
+    e.currentTarget.classList.toggle("active", fibSpiralOnPhoto);
 };
 
 const settingsBtn = document.getElementById("settings");
 
-settingsBtn.onclick = () => {
-    symetry = !symetry;
-    console.log("Symmetry toggled:", symetry);
-};
+function createDefaultSpiral() {
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    // 5-square spiral bounding box is 5s wide × 8s tall (sq2DirIndex=1)
+    const s = Math.min(W / 5, H / 8) * 0.9;
+    const setup = { anchorX: W / 2, anchorY: H / 2, sq2DirIndex: 1, count: 5 };
+    const sp = { squares: [], setup, size: s, mirrored: false, label: String.fromCharCode(nextLabelCode++) };
+    sp.squares = buildFibSquares(sp);
+
+    // Centre the bbox on screen
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const sq of sp.squares) {
+        const hs = sq.size / 2;
+        minX = Math.min(minX, sq.x - hs); minY = Math.min(minY, sq.y - hs);
+        maxX = Math.max(maxX, sq.x + hs); maxY = Math.max(maxY, sq.y + hs);
+    }
+    sp.setup.anchorX += W / 2 - (minX + maxX) / 2;
+    sp.setup.anchorY += H / 2 - (minY + maxY) / 2;
+    sp.squares = buildFibSquares(sp);
+    return sp;
+}
+
+function focusOnSpiral(sp) {
+    if (!sp || sp.squares.length === 0) return;
+    setFocusPoint(sp.squares[0].x, sp.squares[0].y);
+}
 
 fibBtn.onclick = () => {
     fibMode = !fibMode;
     fibBtn.classList.toggle("active", fibMode);
 
     if (fibMode) {
-        // Enter fib mode
         nextLabelCode = 65;
-        spirals = [
-            {
-                squares: [],
-                setup: null,
-                size: window.innerWidth / 16,
-                mirrored: false,
-                label: String.fromCharCode(nextLabelCode++),
-            },
-        ];
+        spirals = [createDefaultSpiral()];
         activeIdx = 0;
         topBar.style.display = "none";
         switchBtn.style.display = "none";
         settingsBtn.style.display = "none";
-        fibMessage.style.display = "block";
+        fibControls.style.display = "flex";
+        fibShutter.style.display = "block";
+        shutter.style.display = "none";
         updateFibList();
+        focusOnSpiral(spirals[0]);
     } else {
-        // Exit fib mode
         hideFibUI();
         spirals = [];
         activeIdx = -1;
-        topBar.style.display = "";
+        fibSpiralOnPhoto = false;
+        fibControls.querySelector("#fib-on-photo").classList.remove("active");
         switchBtn.style.display = "";
         settingsBtn.style.display = "";
+        shutter.style.display = "";
     }
 };
 
@@ -641,6 +676,9 @@ function mouseDragged() {
 }
 
 function mouseReleased() {
+    if (dragging && dragSpiralIdx >= 0) {
+        focusOnSpiral(spirals[dragSpiralIdx]);
+    }
     dragging = false;
     dragSpiralIdx = -1;
 }
@@ -772,54 +810,38 @@ async function takePhoto() {
     const x = width / 2 - w / 2;
     const y = height / 2 - h / 2;
 
-    if (!symetry) {
-        // Normal draw
-        if (facingMode === "user") {
-            ctx.translate(width, 0);
-            ctx.scale(-1, 1);
-        }
-        ctx.drawImage(videoEl, x, y, w, h);
-    } else {
-        // Draw HALF of the video first
-        const halfWidth = videoEl.videoWidth / 2;
-
-        // Create temp canvas to extract half
-        const temp = document.createElement("canvas");
-        temp.width = halfWidth;
-        temp.height = videoEl.videoHeight;
-        const tctx = temp.getContext("2d");
-
-        // Draw left half of video into temp canvas
-        tctx.drawImage(
-            videoEl,
-            0,
-            0,
-            halfWidth,
-            videoEl.videoHeight,
-            0,
-            0,
-            halfWidth,
-            videoEl.videoHeight,
-        );
-
-        // Draw left half normally
-        ctx.drawImage(temp, x, y, w / 2, h);
-
-        // Draw mirrored half
-        ctx.save();
-        ctx.translate(x + w, 0);
+    if (facingMode === "user") {
+        ctx.translate(width, 0);
         ctx.scale(-1, 1);
-        ctx.drawImage(temp, x, y, w / 2, h);
-        ctx.restore();
     }
+    ctx.drawImage(videoEl, x, y, w, h);
 
-    // Draw overlays if enabled
-    if (includeOverlaysInPhoto) {
-        if (facingMode === "user") {
-            ctx.translate(-width, 0);
-            ctx.scale(-1, 1);
+    // Optionally draw the fibonacci spiral onto the photo
+    if (fibMode && fibSpiralOnPhoto) {
+        ctx.resetTransform();
+        ctx.strokeStyle = "rgba(0, 170, 255, 1)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (const sp of spirals) {
+            if (!sp.setup || sp.squares.length === 0) continue;
+            const { sq2DirIndex } = sp.setup;
+            const arcDef = [
+                { dx:  0.5, dy:  0.5, a1: Math.PI,       a2: Math.PI * 1.5 },
+                { dx: -0.5, dy:  0.5, a1: Math.PI * 1.5, a2: Math.PI * 2   },
+                { dx: -0.5, dy: -0.5, a1: 0,              a2: Math.PI * 0.5 },
+                { dx:  0.5, dy: -0.5, a1: Math.PI * 0.5,  a2: Math.PI      },
+            ];
+            const dirs = [(sq2DirIndex + 2) % 4, (sq2DirIndex + 1) % 4];
+            let d = (sq2DirIndex - 1 + 4) % 4;
+            for (let i = 2; i < sp.squares.length; i++) { dirs.push(d); d = (d + 1) % 4; }
+            for (let i = 0; i < sp.squares.length; i++) {
+                const sq = sp.squares[i];
+                const s = sq.size;
+                const { dx, dy, a1, a2 } = arcDef[dirs[i]];
+                ctx.arc(sq.x + dx * s, sq.y + dy * s, s, a1, a2);
+            }
         }
-        drawOverlays(ctx, w, h, x, y, width, height);
+        ctx.stroke();
     }
 
     const dataUrl = tempCanvas.toDataURL("image/png");
@@ -842,6 +864,7 @@ async function takePhoto() {
 }
 
 shutter.onclick = takePhoto;
+
 
 switchBtn.onclick = () => {
     facingMode = facingMode === "environment" ? "user" : "environment";
