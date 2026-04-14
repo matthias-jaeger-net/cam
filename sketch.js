@@ -1,6 +1,7 @@
 let cam;
 let facingMode = "environment";
 
+let symetry = false;
 let fibMode = false;
 let fibSpiralOnPhoto = false;
 let fibButtonClicked = false;
@@ -12,11 +13,6 @@ let dragOffsetY = 0;
 let spirals = []; // [{ squares, setup, size, label }]
 let activeIdx = -1;
 let nextLabelCode = 65; // 65 = 'A'
-
-const fibShutter = document.createElement("button");
-fibShutter.id = "fib-shutter";
-fibShutter.onclick = (e) => { e.stopPropagation(); fibButtonClicked = true; takePhoto(); };
-document.body.appendChild(fibShutter);
 
 const flashEl = document.getElementById("flash");
 const shutter = document.getElementById("shutter");
@@ -55,24 +51,6 @@ closeBtn.onclick = () => {
     overlay.classList.remove("active");
     if (fibMode) restoreFibUI();
 };
-
-const fibMessage = document.createElement("div");
-fibMessage.textContent = "place the centre of the fibonacci squares";
-fibMessage.style.cssText = "position:fixed;top:20px;left:50%;transform:translateX(-50%);color:white;font-size:16px;z-index:1000;pointer-events:none;display:none;white-space:nowrap;";
-document.body.appendChild(fibMessage);
-
-const fibControls = document.createElement("div");
-fibControls.id = "fib-controls-bar";
-fibControls.style.cssText = "position:fixed;bottom:40px;left:50%;transform:translateX(-50%);display:none;gap:20px;z-index:1000;align-items:center;";
-fibControls.innerHTML = `
-    <button id="fib-minus">−</button>
-    <button id="fib-plus">+</button>
-    <button id="fib-spin">↻</button>
-    <button id="fib-mirror">mirror</button>
-    <button id="fib-fit">fit</button>
-    <button id="fib-on-photo">overlay</button>
-`;
-document.body.appendChild(fibControls);
 
 const FIB_DIRS = [
     { dx: 0, dy: -1 }, // 0: UP
@@ -151,25 +129,6 @@ function updateFibList() {
     });
     fibList.style.display = spirals.length > 1 ? "flex" : "none";
 }
-
-fibControls.querySelector("#fib-delete").onclick = (e) => {
-    e.stopPropagation();
-    fibButtonClicked = true;
-    spirals.splice(activeIdx, 1);
-    if (spirals.length === 0) {
-        spirals.push(createDefaultSpiral());
-    }
-    activeIdx = Math.min(activeIdx, spirals.length - 1);
-    updateFibList();
-};
-
-fibControls.querySelector("#fib-new").onclick = (e) => {
-    e.stopPropagation();
-    fibButtonClicked = true;
-    spirals.push(createDefaultSpiral());
-    activeIdx = spirals.length - 1;
-    updateFibList();
-};
 
 fibControls.querySelector("#fib-minus").onclick = (e) => {
     e.stopPropagation();
@@ -316,8 +275,6 @@ let accelX = 0; // left/right tilt (+right, -left)
 let accelY = -9.8; // up/down (upright ≈ -9.8)
 let accelZ = 0; // forward/back tilt
 let hasGyro = false;
-
-closeBtn.onclick = () => overlay.classList.remove("active");
 
 // Check if device requires explicit motion permission (iOS 13+)
 function checkGyroSupport() {
