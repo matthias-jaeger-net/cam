@@ -217,9 +217,9 @@ const settingsBtn = document.getElementById("settings");
 function createDefaultSpiral() {
     const W = window.innerWidth;
     const H = window.innerHeight;
-    // 5-square spiral bounding box is 5s wide × 8s tall (sq2DirIndex=1)
-    const s = Math.min(W / 5, H / 8) * 0.9;
-    const setup = { anchorX: W / 2, anchorY: H / 2, sq2DirIndex: 1, count: 5 };
+    // 9-square spiral bounding box is 34s wide × 55s tall (sq2DirIndex=1)
+    const s = Math.min(W / 34, H / 55) * 0.9;
+    const setup = { anchorX: W / 2, anchorY: H / 2, sq2DirIndex: 1, count: 9 };
     const sp = { squares: [], setup, size: s, mirrored: false, label: String.fromCharCode(nextLabelCode++) };
     sp.squares = buildFibSquares(sp);
 
@@ -795,7 +795,10 @@ async function takePhoto() {
                 const sq = sp.squares[i];
                 const s = sq.size;
                 const { dx, dy, a1, a2 } = arcDef[dirs[i]];
-                ctx.arc(sq.x + dx * s, sq.y + dy * s, s, a1, a2);
+                const cx = sq.x + dx * s;
+                const cy = sq.y + dy * s;
+                ctx.moveTo(cx + s * Math.cos(a1), cy + s * Math.sin(a1));
+                ctx.arc(cx, cy, s, a1, a2);
             }
         }
         ctx.stroke();

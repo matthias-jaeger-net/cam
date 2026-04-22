@@ -309,16 +309,16 @@ button {
     position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    width: 100%;
+    bottom: 0;
     display: none;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: 20px;
-    padding-top: calc(20px + env(safe-area-inset-top));
-    gap: 10px;
+    padding: 16px;
+    padding-left: calc(16px + env(safe-area-inset-left));
+    gap: 14px;
     z-index: 1000;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), transparent);
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.5), transparent);
 }
 
 #fib-controls-bar button {
@@ -343,4 +343,9 @@ button {
 
 #fib-controls-bar button:active {
     transform: scale(0.92);
+}
+
+#fib-on-photo.active {
+    background: rgba(0, 170, 255, 0.4);
+    border: 2px solid #0af;
 }
