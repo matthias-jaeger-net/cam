@@ -4,6 +4,7 @@ let facingMode = "environment";
 let symetry = false;
 let fibMode = false;
 let fibSpiralOnPhoto = false;
+let fibDrawMode = 'all'; // 'all', 'spiral', 'squares'
 let fibButtonClicked = false;
 let dragging = false;
 let dragSpiralIdx = -1;
@@ -134,32 +135,30 @@ fibControls.querySelector("#fib-minus").onclick = (e) => {
     e.stopPropagation();
     fibButtonClicked = true;
     const sp = spirals[activeIdx];
-    sp.size = max(2, sp.size - 10);
+    if (!sp.setup || sp.setup.count <= 2) return;
+    sp.setup.count--;
+    sp.setup.sq2DirIndex = (sp.setup.sq2DirIndex + 1) % 4;
     sp.squares = buildFibSquares(sp);
-    focusOnSpiral(sp);
+    fitSpiral(sp);
 };
 fibControls.querySelector("#fib-plus").onclick = (e) => {
     e.stopPropagation();
     fibButtonClicked = true;
     const sp = spirals[activeIdx];
-    sp.size += 2;
+    if (!sp.setup) return;
+    sp.setup.count++;
+    sp.setup.sq2DirIndex = (sp.setup.sq2DirIndex + 1) % 4;
     sp.squares = buildFibSquares(sp);
-    focusOnSpiral(sp);
+    fitSpiral(sp);
 };
 fibControls.querySelector("#fib-spin").onclick = (e) => {
     e.stopPropagation();
     fibButtonClicked = true;
     const sp = spirals[activeIdx];
     if (sp.setup) {
-        const d = FIB_DIRS[sp.setup.sq2DirIndex];
-        const sq1x = sp.setup.anchorX - (d.dx * sp.size) / 2;
-        const sq1y = sp.setup.anchorY - (d.dy * sp.size) / 2;
-        sp.setup.sq2DirIndex = (sp.setup.sq2DirIndex + 1) % 4;
-        const nd = FIB_DIRS[sp.setup.sq2DirIndex];
-        sp.setup.anchorX = sq1x + (nd.dx * sp.size) / 2;
-        sp.setup.anchorY = sq1y + (nd.dy * sp.size) / 2;
+        sp.setup.sq2DirIndex = (sp.setup.sq2DirIndex + 2) % 4;
         sp.squares = buildFibSquares(sp);
-        focusOnSpiral(sp);
+        fitSpiral(sp);
     }
 };
 
@@ -170,19 +169,31 @@ fibControls.querySelector("#fib-mirror").onclick = (e) => {
     if (sp.setup) {
         sp.mirrored = !sp.mirrored;
         sp.squares = buildFibSquares(sp);
-        focusOnSpiral(sp);
+        fitSpiral(sp);
     }
 };
 
-fibControls.querySelector("#fib-fit").onclick = (e) => {
-    e.stopPropagation();
-    fibButtonClicked = true;
-    const sp = spirals[activeIdx];
+function centerSpiral(sp) {
     if (!sp.setup || sp.squares.length < 2) return;
-    let minX = Infinity,
-        minY = Infinity,
-        maxX = -Infinity,
-        maxY = -Infinity;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const sq of sp.squares) {
+        const s = sq.size / 2;
+        minX = Math.min(minX, sq.x - s);
+        minY = Math.min(minY, sq.y - s);
+        maxX = Math.max(maxX, sq.x + s);
+        maxY = Math.max(maxY, sq.y + s);
+    }
+    const bboxCX = (minX + maxX) / 2;
+    const bboxCY = (minY + maxY) / 2;
+    sp.setup.anchorX += window.innerWidth / 2 - bboxCX;
+    sp.setup.anchorY += window.innerHeight / 2 - bboxCY;
+    sp.squares = buildFibSquares(sp);
+    focusOnSpiral(sp);
+}
+
+function fitSpiral(sp) {
+    if (!sp.setup || sp.squares.length < 2) return;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const sq of sp.squares) {
         const s = sq.size / 2;
         minX = Math.min(minX, sq.x - s);
@@ -197,20 +208,39 @@ fibControls.querySelector("#fib-fit").onclick = (e) => {
     const bboxCX = (minX + maxX) / 2;
     const bboxCY = (minY + maxY) / 2;
     const xSign = sp.mirrored ? -1 : 1;
-    sp.setup.anchorX =
-        window.innerWidth / 2 + xSign * (sp.setup.anchorX - bboxCX) * scale;
-    sp.setup.anchorY =
-        window.innerHeight / 2 + (sp.setup.anchorY - bboxCY) * scale;
+    sp.setup.anchorX = window.innerWidth / 2 + xSign * (sp.setup.anchorX - bboxCX) * scale;
+    sp.setup.anchorY = window.innerHeight / 2 + (sp.setup.anchorY - bboxCY) * scale;
     sp.size = sp.size * scale;
     sp.squares = buildFibSquares(sp);
     focusOnSpiral(sp);
+}
+
+fibControls.querySelector("#fib-fit").onclick = (e) => {
+    e.stopPropagation();
+    fibButtonClicked = true;
+    fitSpiral(spirals[activeIdx]);
 };
 
 fibControls.querySelector("#fib-on-photo").onclick = (e) => {
     e.stopPropagation(); fibButtonClicked = true;
     fibSpiralOnPhoto = !fibSpiralOnPhoto;
     e.currentTarget.classList.toggle("active", fibSpiralOnPhoto);
+    const modeGroup = document.getElementById("fib-overlay-mode");
+    modeGroup.style.display = fibSpiralOnPhoto ? "flex" : "none";
+    if (!fibSpiralOnPhoto) {
+        fibDrawMode = 'all';
+        modeGroup.querySelectorAll(".fib-mode-btn").forEach(b => b.classList.toggle("active", b.dataset.mode === 'all'));
+    }
 };
+
+document.querySelectorAll(".fib-mode-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        fibButtonClicked = true;
+        fibDrawMode = btn.dataset.mode;
+        document.querySelectorAll(".fib-mode-btn").forEach(b => b.classList.toggle("active", b === btn));
+    });
+});
 
 const settingsBtn = document.getElementById("settings");
 
@@ -256,7 +286,7 @@ fibBtn.onclick = () => {
         fibShutter.style.display = "block";
         shutter.style.display = "none";
         updateFibList();
-        focusOnSpiral(spirals[0]);
+        fitSpiral(spirals[0]);
     } else {
         hideFibUI();
         spirals = [];
@@ -463,10 +493,14 @@ function draw() {
                     translate(2 * sp.setup.anchorX, 0);
                     scale(-1, 1);
                 }
-                for (const sq of sp.squares) {
-                    rect(sq.x, sq.y, sq.size || sp.size, sq.size || sp.size);
+                const showSquares = !fibSpiralOnPhoto || fibDrawMode !== 'spiral';
+                const showSpiral = !fibSpiralOnPhoto || fibDrawMode !== 'squares';
+                if (showSquares) {
+                    for (const sq of sp.squares) {
+                        rect(sq.x, sq.y, sq.size || sp.size, sq.size || sp.size);
+                    }
                 }
-                if (sp.squares.length >= 3) drawFibSpiral(sp);
+                if (showSpiral && sp.squares.length >= 3) drawFibSpiral(sp);
                 if (useMirror) pop();
             }
         }
@@ -773,35 +807,48 @@ async function takePhoto() {
     }
     ctx.drawImage(videoEl, x, y, w, h);
 
-    // Optionally draw the fibonacci spiral onto the photo
+    // Optionally draw the fibonacci overlay onto the photo
     if (fibMode && fibSpiralOnPhoto) {
         ctx.resetTransform();
         ctx.strokeStyle = "rgba(0, 170, 255, 1)";
         ctx.lineWidth = 2;
-        ctx.beginPath();
-        for (const sp of spirals) {
-            if (!sp.setup || sp.squares.length === 0) continue;
-            const { sq2DirIndex } = sp.setup;
+
+        if (fibDrawMode !== 'spiral') {
+            for (const sp of spirals) {
+                if (!sp.setup || sp.squares.length === 0) continue;
+                for (const sq of sp.squares) {
+                    const s = sq.size || sp.size;
+                    ctx.strokeRect(sq.x - s / 2, sq.y - s / 2, s, s);
+                }
+            }
+        }
+
+        if (fibDrawMode !== 'squares') {
             const arcDef = [
                 { dx:  0.5, dy:  0.5, a1: Math.PI,       a2: Math.PI * 1.5 },
                 { dx: -0.5, dy:  0.5, a1: Math.PI * 1.5, a2: Math.PI * 2   },
                 { dx: -0.5, dy: -0.5, a1: 0,              a2: Math.PI * 0.5 },
-                { dx:  0.5, dy: -0.5, a1: Math.PI * 0.5,  a2: Math.PI      },
+                { dx:  0.5, dy: -0.5, a1: Math.PI * 0.5, a2: Math.PI       },
             ];
-            const dirs = [(sq2DirIndex + 2) % 4, (sq2DirIndex + 1) % 4];
-            let d = (sq2DirIndex - 1 + 4) % 4;
-            for (let i = 2; i < sp.squares.length; i++) { dirs.push(d); d = (d + 1) % 4; }
-            for (let i = 0; i < sp.squares.length; i++) {
-                const sq = sp.squares[i];
-                const s = sq.size;
-                const { dx, dy, a1, a2 } = arcDef[dirs[i]];
-                const cx = sq.x + dx * s;
-                const cy = sq.y + dy * s;
-                ctx.moveTo(cx + s * Math.cos(a1), cy + s * Math.sin(a1));
-                ctx.arc(cx, cy, s, a1, a2);
+            ctx.beginPath();
+            for (const sp of spirals) {
+                if (!sp.setup || sp.squares.length === 0) continue;
+                const { sq2DirIndex } = sp.setup;
+                const dirs = [(sq2DirIndex + 2) % 4, (sq2DirIndex + 1) % 4];
+                let d = (sq2DirIndex - 1 + 4) % 4;
+                for (let i = 2; i < sp.squares.length; i++) { dirs.push(d); d = (d + 1) % 4; }
+                for (let i = 0; i < sp.squares.length; i++) {
+                    const sq = sp.squares[i];
+                    const s = sq.size;
+                    const { dx, dy, a1, a2 } = arcDef[dirs[i]];
+                    const cx = sq.x + dx * s;
+                    const cy = sq.y + dy * s;
+                    ctx.moveTo(cx + s * Math.cos(a1), cy + s * Math.sin(a1));
+                    ctx.arc(cx, cy, s, a1, a2);
+                }
             }
+            ctx.stroke();
         }
-        ctx.stroke();
     }
 
     const dataUrl = tempCanvas.toDataURL("image/png");
